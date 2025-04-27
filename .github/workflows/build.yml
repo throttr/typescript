@@ -6,6 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      throttr:
+        image: ghcr.io/throttr/throttr:1.0.0-release
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "bash -c 'echo > /dev/tcp/localhost/9000'" 
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
