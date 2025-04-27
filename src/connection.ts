@@ -26,7 +26,7 @@ export class Connection {
      *
      * @private
      */
-    private socket: Socket;
+    private readonly socket: Socket;
 
     /**
      * Host
@@ -47,7 +47,7 @@ export class Connection {
      *
      * @private
      */
-    private queue: QueuedRequest[] = [];
+    private readonly queue: QueuedRequest[] = [];
 
     /**
      * Busy
@@ -77,7 +77,7 @@ export class Connection {
             });
 
             /* c8 ignore start */
-            this.socket.once('error', (err) => {
+            this.socket.once('error', (err: Error) => {
                 reject(err);
             });
             /* c8 ignore stop */

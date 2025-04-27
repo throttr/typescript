@@ -1,11 +1,23 @@
 {
-  "name": "@throttr/typescript",
+  "name": "@throttr/sdk",
+  "version": "1.0.0",
+  "description": "Node.js client SDK for Throttr TCP server.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage"
+  },
+  "author": "Ian Torres",
+  "license": "AGPL-3.0",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",
