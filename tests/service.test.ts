@@ -21,7 +21,7 @@ describe('Service', () => {
     beforeAll(async () => {
         service = new Service({
             host: "127.0.0.1",
-            port: 35553,
+            port: 9000,
         });
         await service.connect();
     });
