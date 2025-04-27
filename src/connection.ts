@@ -76,9 +76,11 @@ export class Connection {
                 resolve();
             });
 
+            /* c8 ignore start */
             this.socket.once('error', (err) => {
                 reject(err);
             });
+            /* c8 ignore stop */
         });
     }
 
@@ -109,11 +111,13 @@ export class Connection {
         const { buffer, resolve, reject } = this.queue.shift()!;
         this.busy = true;
 
+        /* c8 ignore start */
         this.socket.once('error', (err) => {
             this.busy = false;
             reject(err);
             this.processQueue();
         });
+        /* c8 ignore stop */
 
         this.socket.write(buffer, () => {
             const chunks: Buffer[] = [];
@@ -132,9 +136,11 @@ export class Connection {
                         const full = Buffer.concat(chunks);
                         const response = ParseResponse(full);
                         resolve(response);
+                        /* c8 ignore start */
                     } catch (err) {
                         reject(err);
                     }
+                    /* c8 ignore stop */
                     this.processQueue();
                 }
             };

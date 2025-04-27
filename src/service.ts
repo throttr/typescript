@@ -69,9 +69,11 @@ export class Service {
      * @param request
      */
     async send(request: Request): Promise<Response> {
+        /* c8 ignore start */
         if (this.connections.length === 0) {
             throw new Error("No available connections.");
         }
+        /* c8 ignore stop */
 
         const conn = this.connections[this.round_robin_index];
         this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;

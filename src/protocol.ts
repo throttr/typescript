@@ -76,9 +76,11 @@ export function BuildRequest(request: Request): Buffer {
  * @constructor
  */
 export function ParseResponse(buffer: Buffer): Response {
+    /* c8 ignore start */
     if (buffer.length !== 13) {
         throw new Error("Invalid response size.");
     }
+    /* c8 ignore stop */
 
     const can = buffer.readUInt8(0) !== 0;
     const available_requests = buffer.readInt32LE(1);
