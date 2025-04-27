@@ -122,7 +122,7 @@ describe('Service', () => {
         };
 
         const requestLocalhost = { ...baseRequest, ip: "127.0.0.1" };
-        const requestAnotherIP = { ...baseRequest, ip: "192.168.0.1" };
+        const requestAnotherIP = { ...baseRequest, ip: "127.0.0.2" };
 
         const response1 = await service.send(requestLocalhost);
         const response2 = await service.send(requestAnotherIP);
