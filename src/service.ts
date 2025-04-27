@@ -25,14 +25,14 @@ export class Service {
      *
      * @private
      */
-    private config: Configuration;
+    private readonly config: Configuration;
 
     /**
      * Connections
      *
      * @private
      */
-    private connections: Connection[] = [];
+    private readonly connections: Connection[] = [];
 
     /**
      * Round-robin index
@@ -56,7 +56,7 @@ export class Service {
      * Connect
      */
     async connect() {
-        for (let i = 0; i < (this.config.max_connections || 1); i++) {
+        for (let i = 0; i < (this.config.max_connections ?? 1); i++) {
             const conn = new Connection(this.config.host, this.config.port);
             await conn.connect();
             this.connections.push(conn);
