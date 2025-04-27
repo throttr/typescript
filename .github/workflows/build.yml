@@ -38,10 +38,6 @@ jobs:
         run: |
           yarn build
 
-      - name: Run tests
-        run: |
-          yarn test
-
-      - name: Generate coverage report
+      - name: Run tests with coverage report
         run: |
           yarn test:coverage
