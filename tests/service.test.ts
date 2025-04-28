@@ -13,8 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Service } from "../src";
-import { RequestType, TTLType, AttributeType, ChangeType, FullResponse, SimpleResponse } from "../src";
+import { Service, RequestType, TTLType, AttributeType, ChangeType, FullResponse, SimpleResponse } from "../src";
 
 describe('Service', () => {
     let service: Service;
