@@ -33,34 +33,115 @@ export interface Configuration {
     max_connections?: number;
 }
 
+export enum RequestType {
+    Insert = 0x01,
+    Query = 0x02,
+    Update = 0x03,
+    Purge = 0x04,
+}
+
+/**
+ * TTL types
+ */
+export enum TTLType {
+    Nanoseconds = 0,
+    Milliseconds = 1,
+    Seconds = 2,
+}
+
+/**
+ * Attributes types
+ */
+export enum AttributeType {
+    Quota = 0,
+    TTL = 1,
+}
+
+/**
+ * Change types
+ */
+export enum ChangeType {
+    Patch = 0,
+    Increase = 1,
+    Decrease = 2,
+}
+
+/**
+ * Insert request
+ */
+export interface InsertRequest {
+    type: RequestType.Insert;
+    quota: bigint;
+    usage: bigint;
+    ttl_type: TTLType;
+    ttl: bigint;
+    consumer_id: string;
+    resource_id: string;
+}
+
+/**
+ * Query request
+ */
+export interface QueryRequest {
+    type: RequestType.Query;
+    consumer_id: string;
+    resource_id: string;
+}
+
+/**
+ * Purge request
+ */
+export interface PurgeRequest {
+    type: RequestType.Purge;
+    consumer_id: string;
+    resource_id: string;
+}
+
+/**
+ * Update request
+ */
+export interface UpdateRequest {
+    type: RequestType.Update;
+    attribute: AttributeType;
+    change: ChangeType;
+    value: bigint;
+    consumer_id: string;
+    resource_id: string;
+}
+
 /**
  * Request
  */
-export interface Request {
+export type Request = InsertRequest | QueryRequest | PurgeRequest | UpdateRequest;
+
+/**
+ * Full response
+ */
+export interface FullResponse {
     /**
-     * IP address
+     * Allowed
      */
-    ip: string;
+    allowed: boolean;
 
     /**
-     * Port
+     * Quota remaining
      */
-    port: number;
+    quota_remaining: bigint;
 
     /**
-     * URL
+     * TTL remaining
      */
-    url: string;
+    ttl_remaining: bigint;
+}
 
+/**
+ * Simple response
+ */
+export interface SimpleResponse {
     /**
-     * Maximum requests
+     * Success
      */
-    max_requests: number;
-
-    /**
-     * Time to live
-     */
-    ttl: number;
+    success: boolean;
 }
 
 /**
@@ -77,7 +158,7 @@ export interface QueuedRequest {
      *
      * @param response
      */
-    resolve: (response: Response) => void;
+    resolve: (response: FullResponse | SimpleResponse) => void;
 
     /**
      * Reject
@@ -85,37 +166,14 @@ export interface QueuedRequest {
      * @param error
      */
     reject: (error: any) => void;
+
+    /**
+     * Expected size
+     */
+    expectedSize: number;
+
+    /**
+     * Expected type
+     */
+    expectedType: 'full' | 'simple';
 }
-
-/**
- * Response
- */
-export interface Response {
-    /**
-     * Can
-     */
-    can: boolean;
-
-    /**
-     * Available requests
-     */
-    available_requests: number;
-
-    /**
-     * Time to live
-     */
-    ttl: number;
-}
-
-export interface IPBuffer {
-    /**
-     * Version
-     */
-    version: number;
-
-    /**
-     * Buffer
-     */
-    buffer: Buffer;
-}
-

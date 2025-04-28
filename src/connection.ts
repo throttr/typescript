@@ -14,8 +14,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from "net";
-import { Request, Response, QueuedRequest } from "./types";
-import { BuildRequest, ParseResponse } from "./protocol";
+import { Request, FullResponse, SimpleResponse, QueuedRequest } from "./types";
+import { BuildRequest, ParseResponse, GetExpectedResponseSize, GetExpectedResponseType } from "./protocol";
 
 /**
  * Connection
@@ -57,7 +57,29 @@ export class Connection {
     private busy: boolean = false;
 
     /**
+     * Current expected size
+     *
+     * @private
+     */
+    private expectedSize: number = 0;
+
+    /**
+     * Current expected type
+     *
+     * @private
+     */
+    private expectedType: 'full' | 'simple' = 'full';
+
+    /**
+     * Current queued request
+     *
+     * @private
+     */
+    private current?: QueuedRequest;
+
+    /**
      * Constructor
+     *
      * @param host
      * @param port
      */
@@ -73,6 +95,8 @@ export class Connection {
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.socket.connect(this.port, this.host, () => {
+                this.socket.on('data', (chunk) => this.handleData(chunk));
+                this.socket.on('error', (err) => this.handleError(err));
                 resolve();
             });
 
@@ -89,11 +113,13 @@ export class Connection {
      *
      * @param request
      */
-    send(request: Request): Promise<Response> {
+    send(request: Request): Promise<FullResponse | SimpleResponse> {
         const buffer = BuildRequest(request);
+        const expectedSize = GetExpectedResponseSize(request);
+        const expectedType = GetExpectedResponseType(request);
 
         return new Promise((resolve, reject) => {
-            this.queue.push({ buffer, resolve, reject });
+            this.queue.push({ buffer, resolve, reject, expectedSize, expectedType });
             this.processQueue();
         });
     }
@@ -108,51 +134,70 @@ export class Connection {
             return;
         }
 
-        const { buffer, resolve, reject } = this.queue.shift()!;
+        const next = this.queue.shift()!;
+        this.current = next;
         this.busy = true;
+        this.expectedSize = next.expectedSize;
+        this.expectedType = next.expectedType;
 
-        /* c8 ignore start */
-        this.socket.once('error', (err) => {
+        this.socket.write(next.buffer);
+    }
+
+    /**
+     * Handle incoming data
+     *
+     * @param chunk
+     * @private
+     */
+    private handleData(chunk: Buffer) {
+        if (!this.current) {
+            return;
+        }
+
+        const chunks: Buffer[] = [];
+        let received = 0;
+
+        chunks.push(chunk);
+        received += chunk.length;
+
+        if (received >= this.expectedSize) {
+            try {
+                const full = Buffer.concat(chunks);
+                const response = ParseResponse(full, this.expectedType);
+                this.current.resolve(response);
+                /* c8 ignore start */
+            } catch (err) {
+                this.current.reject(err);
+            }
+            /* c8 ignore stop */
+
+            this.current = undefined;
             this.busy = false;
-            reject(err);
             this.processQueue();
-        });
-        /* c8 ignore stop */
+        }
+    }
 
-        this.socket.write(buffer, () => {
-            const chunks: Buffer[] = [];
-            let received = 0;
+    /**
+     * Handle error
+     *
+     * @param error
+     * @private
+     */
+    private handleError(error: Error) {
+        if (this.current) {
+            this.current.reject(error);
+            this.current = undefined;
+        }
 
-            const onData = (chunk: Buffer) => {
-
-                chunks.push(chunk);
-
-                received += chunk.length;
-
-                if (received >= 13) {
-                    this.socket.off('data', onData);
-                    this.busy = false;
-                    try {
-                        const full = Buffer.concat(chunks);
-                        const response = ParseResponse(full);
-                        resolve(response);
-                        /* c8 ignore start */
-                    } catch (err) {
-                        reject(err);
-                    }
-                    /* c8 ignore stop */
-                    this.processQueue();
-                }
-            };
-
-            this.socket.on('data', onData);
-        });
+        this.busy = false;
+        this.processQueue();
     }
 
     /**
      * Disconnect
      */
     disconnect() {
+        this.socket.removeAllListeners(); // limpieza total
         this.socket.end();
     }
 }

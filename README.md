@@ -27,6 +27,8 @@ The SDK enables sending traffic control requests efficiently, without HTTP, resp
 
 ## Installation
 
+Add the dependency using Yarn or NPM:
+
 ```bash
 yarn add @throttr/sdk
 ```
@@ -40,38 +42,61 @@ npm install @throttr/sdk
 ## Basic Usage
 
 ```typescript
-import { Service, Request, Response } from "@throttr/sdk";
+import { Service, RequestType, TTLType, AttributeType, ChangeType } from "@throttr/sdk";
 
 const service = new Service({
-  host: "127.0.0.1",
-  port: 9000,
+    host: "127.0.0.1",
+    port: 9000,
+    max_connections: 4, // Optional: configure concurrent connections
 });
 
+// Define a consumer (example: IP + port, UUID, or custom identifier)
+const consumerId = "127.0.0.1:1234";
+
+// Define a resource (example: METHOD + URL, or any identifier)
+const resourceId = "GET /api/resource";
+
+// Connect to Throttr
 await service.connect();
 
-const request: Request = {
-  ip: "127.0.0.1",
-  port: 37451,
-  url: "GET /api/resource",
-  max_requests: 5,
-  ttl: 5000, // in milliseconds
-};
+// Insert quota for a consumer-resource pair
+await service.send({
+    type: RequestType.Insert,
+    consumer_id: consumerId,
+    resource_id: resourceId,
+    quota: BigInt(5),
+    usage: BigInt(0),
+    ttl_type: TTLType.Milliseconds,
+    ttl: BigInt(3000), // 3 seconds
+});
 
-const response: Response = await service.send(request);
+// Query the available quota
+const response = await service.send({
+    type: RequestType.Query,
+    consumer_id: consumerId,
+    resource_id: resourceId,
+});
 
-console.log(response);
-// { can: true, available_requests: 4, ttl: 4950 }
+console.log(`Allowed: ${response.allowed}, Remaining: ${response.quota_remaining}, TTL: ${response.ttl_remaining}ms`);
 
+// Optionally, update the quota
+await service.send({
+    type: RequestType.Purge,
+    consumer_id: consumerId,
+    resource_id: resourceId,
+});
+
+// Disconnect once done
 service.disconnect();
 ```
+
+See more examples in [tests](./tests/service.test.ts).
 
 ## Technical Notes
 
 - The protocol assumes Little Endian architecture.
-- The server does not respond to malformed requests.
-- IP must be a valid IPv4 or IPv6 address; otherwise, an error is thrown.
 - The internal message queue ensures requests are processed sequentially.
-- Throttr independently manages quotas per IP, port, and URL.
+- The package is defined to works with protocol 2.0.0 or greatest.
 
 ---
 

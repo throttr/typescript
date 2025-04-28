@@ -8,7 +8,7 @@ jobs:
 
     services:
       throttr:
-        image: ghcr.io/throttr/throttr:1.0.0-release
+        image: ghcr.io/throttr/throttr:2.0.0-release
         ports:
           - 9000:9000
         options: >-
