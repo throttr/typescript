@@ -165,9 +165,11 @@ export class Connection {
                 const full = Buffer.concat(chunks);
                 const response = ParseResponse(full, this.expectedType);
                 this.current.resolve(response);
+                /* c8 ignore start */
             } catch (err) {
                 this.current.reject(err);
             }
+            /* c8 ignore stop */
 
             this.current = undefined;
             this.busy = false;

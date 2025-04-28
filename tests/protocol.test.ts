@@ -13,6 +13,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-export { Service } from "./service";
-export { RequestType, TTLType, AttributeType, ChangeType } from "./types";
-export type { Request, FullResponse, SimpleResponse } from "./types";
+import { describe, it, expect } from "vitest";
+import { GetExpectedResponseSize, GetExpectedResponseType } from "../src/protocol";
+import { Request } from "../src";
+
+describe('Protocol', () => {
+    it('should throw error on unknown request type for response size', () => {
+        const fakeRequest = { type: 99 } as unknown as Request;
+        expect(() => GetExpectedResponseSize(fakeRequest)).toThrowError('Unknown request type');
+    });
+
+    it('should throw error on unknown request type for response type', () => {
+        const fakeRequest = { type: 99 } as unknown as Request;
+        expect(() => GetExpectedResponseType(fakeRequest)).toThrowError('Unknown request type');
+    });
+});

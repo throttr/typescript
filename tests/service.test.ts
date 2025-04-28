@@ -14,7 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Service } from "../src";
-import { RequestType, TTLType, AttributeType, ChangeType, FullResponse, SimpleResponse } from "../src/types";
+import { RequestType, TTLType, AttributeType, ChangeType, FullResponse, SimpleResponse } from "../src";
 
 describe('Service', () => {
     let service: Service;
