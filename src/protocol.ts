@@ -13,82 +13,58 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { isIPv4, isIPv6 } from "net";
-import { Request, Response, IPBuffer } from "./types";
-
-/**
- * Converts string IP address to IPBuffer
- *
- * @param ip
- * @constructor
- */
-export function IPToBuffer(ip: string): IPBuffer {
-    const buf = Buffer.alloc(16);
-
-    if (isIPv4(ip)) {
-        const parts = ip.split(".");
-        parts.forEach((part, idx) => {
-            buf[idx] = parseInt(part, 10);
-        });
-        return { version: 4, buffer: buf };
-    }
-
-    if (isIPv6(ip)) {
-        const packed = ip.split(":").flatMap(block => {
-            const num = parseInt(block || "0", 16);
-            return [(num >> 8) & 0xff, num & 0xff];
-        });
-
-        const bytes = Buffer.from(packed);
-        bytes.copy(buf, 0);
-        return { version: 6, buffer: buf };
-    }
-
-    throw new Error("Invalid IP format");
-}
+import { Request, RequestType } from "./types";
+import { serializeRequest, parseResponse } from "./utils";
 
 /**
  * Build request
  *
  * @param request
- * @constructor
  */
-export function BuildRequest(request: Request): Buffer {
-    const urlBuf = Buffer.from(request.url, 'utf-8');
-    const buffer = Buffer.alloc(28 + urlBuf.length);
-
-    const { version, buffer: ipBuf } = IPToBuffer(request.ip);
-    buffer.writeUInt8(version, 0);
-    ipBuf.copy(buffer, 1);
-    buffer.writeUInt16LE(request.port, 17);
-    buffer.writeUInt32LE(request.max_requests, 19);
-    buffer.writeUInt32LE(request.ttl, 23);
-    buffer.writeUInt8(urlBuf.length, 27);
-    urlBuf.copy(buffer, 28);
-
-    return buffer;
-}
+export const BuildRequest = serializeRequest;
 
 /**
  * Parse response
  *
  * @param buffer
- * @constructor
+ * @param expected
  */
-export function ParseResponse(buffer: Buffer): Response {
-    /* c8 ignore start */
-    if (buffer.length !== 13) {
-        throw new Error("Invalid response size.");
+export function ParseResponse(buffer: Buffer, expected: 'full' | 'simple') {
+    return parseResponse(buffer, expected);
+}
+
+/**
+ * Get expected response size
+ *
+ * @param request
+ */
+export function GetExpectedResponseSize(request: Request): number {
+    switch (request.type) {
+        case RequestType.Insert:
+        case RequestType.Query:
+            return 18;
+        case RequestType.Update:
+        case RequestType.Purge:
+            return 1;
+        default:
+            throw new Error('Unknown request type');
     }
-    /* c8 ignore stop */
+}
 
-    const can = buffer.readUInt8(0) !== 0;
-    const available_requests = buffer.readInt32LE(1);
-    const ttl = buffer.readBigInt64LE(5);
-
-    return {
-        can,
-        available_requests,
-        ttl: Number(ttl),
-    };
+/**
+ * Get expected response type
+ *
+ * @param request
+ */
+export function GetExpectedResponseType(request: Request): 'full' | 'simple' {
+    switch (request.type) {
+        case RequestType.Insert:
+        case RequestType.Query:
+            return 'full';
+        case RequestType.Update:
+        case RequestType.Purge:
+            return 'simple';
+        default:
+            throw new Error('Unknown request type');
+    }
 }

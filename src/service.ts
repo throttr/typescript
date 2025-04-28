@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Configuration, Request, Response } from "./types";
+import { Configuration, Request, FullResponse, SimpleResponse } from "./types";
 import { Connection } from "./connection";
 
 /**
@@ -68,7 +68,7 @@ export class Service {
      *
      * @param request
      */
-    async send(request: Request): Promise<Response> {
+    async send(request: Request): Promise<FullResponse | SimpleResponse> {
         /* c8 ignore start */
         if (this.connections.length === 0) {
             throw new Error("No available connections.");

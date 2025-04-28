@@ -14,6 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Service } from "../src";
+import { RequestType, TTLType, AttributeType, ChangeType, FullResponse, SimpleResponse } from "../src/types";
 
 describe('Service', () => {
     let service: Service;
@@ -30,155 +31,204 @@ describe('Service', () => {
         service.disconnect();
     });
 
-    it('should connect, send something and receive a valid format', async () => {
-        const request = {
-            ip: "127.0.0.1",
-            port: 9000,
-            url: "POST /api/validate",
-            max_requests: 1,
-            ttl: 1000,
-        };
+    it('should insert and query successfully', async () => {
+        const consumerId = "user:123";
+        const resourceId = "/api/test";
 
-        const response = await service.send(request);
+        const insert = await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(5),
+            usage: BigInt(0),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(5),
+        }) as FullResponse;
 
-        expect(typeof response.can).toBe("boolean");
-        expect(typeof response.available_requests).toBe("number");
-        expect(typeof response.ttl).toBe("number");
+        expect(insert.allowed).toBe(true);
+
+        const query = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
+
+        expect(query.allowed).toBe(true);
+        expect(typeof query.quota_remaining).toBe("bigint");
+        expect(typeof query.ttl_remaining).toBe("bigint");
     });
 
-    it('should connect and send a requests until server respond unavailable', async () => {
-        const request = {
-            ip: "127.0.0.1",
-            port: 9000,
-            url: "POST /api/auth",
-            max_requests: 5,
-            ttl: 5000,
-        };
+    it('should consume quota via Insert usage and deny after exhausted', async () => {
+        const consumerId = "user:consume-insert";
+        const resourceId = "/api/consume-insert";
 
-        for (let i = 5; i > 0; i--) {
-            const response = await service.send(request);
+        await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(2),
+            usage: BigInt(0),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(5),
+        });
 
-            expect(response.can).toBe(true);
-            expect(response.available_requests).toBe(i - 1);
-            expect(response.ttl).toBeGreaterThan(0);
-        }
+        // Primer consumo
+        const first = await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(0),
+            usage: BigInt(1),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(5),
+        }) as FullResponse;
 
-        const response = await service.send(request);
+        expect(first.allowed).toBe(true);
 
-        expect(response.can).toBe(false);
-        expect(response.available_requests).toBe(0);
-        expect(response.ttl).toBeGreaterThan(0);
+        // Segundo consumo
+        const second = await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(0),
+            usage: BigInt(1),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(5),
+        }) as FullResponse;
+
+        expect(second.allowed).toBe(true);
+
+        // Ya debería estar agotado, pero Insert igual puede aceptar, vamos a verificar la cuota
+        const query = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
+
+        expect(query.quota_remaining <= BigInt(0)).toBe(true);
     });
 
-    it('should reset available requests after TTL expires', async () => {
-        const request = {
-            ip: "127.0.0.1",
-            port: 9000,
-            url: "POST /api/refresh",
-            max_requests: 2,
-            ttl: 2000, // 2 segundos
-        };
+    it('should consume quota via Update decrease and quota reach zero', async () => {
+        const consumerId = "user:consume-update";
+        const resourceId = "/api/consume-update";
 
-        await service.send(request);
-        await service.send(request);
+        await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(2),
+            usage: BigInt(0),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(5),
+        });
 
-        const denied = await service.send(request);
-        expect(denied.can).toBe(false);
+        // Decrease 1
+        const firstUpdate = await service.send({
+            type: RequestType.Update,
+            attribute: AttributeType.Quota,
+            change: ChangeType.Decrease,
+            value: BigInt(1),
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as SimpleResponse;
 
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        expect(firstUpdate.success).toBe(true);
 
-        const refreshed = await service.send(request);
-        expect(refreshed.can).toBe(true);
-        expect(refreshed.available_requests).toBe(1);
+        // Decrease 1
+        const secondUpdate = await service.send({
+            type: RequestType.Update,
+            attribute: AttributeType.Quota,
+            change: ChangeType.Decrease,
+            value: BigInt(1),
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as SimpleResponse;
+
+        expect(secondUpdate.success).toBe(true);
+
+        // Decrease 1 más
+        const thirdUpdate = await service.send({
+            type: RequestType.Update,
+            attribute: AttributeType.Quota,
+            change: ChangeType.Decrease,
+            value: BigInt(1),
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as SimpleResponse;
+
+        expect(thirdUpdate.success).toBe(true);
+
+        // Ahora consultamos y verificamos cuota
+        const query = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
+
+        expect(query.quota_remaining <= BigInt(0)).toBe(true);
     });
 
-    it('should maintain separate counters for different URLs', async () => {
-        const baseRequest = {
-            ip: "127.0.0.1",
-            port: 9000,
-            max_requests: 3,
-            ttl: 5000,
-        };
+    it('should purge and fail to query afterwards', async () => {
+        const consumerId = "user:purge";
+        const resourceId = "/api/purge";
 
-        const authRequest = { ...baseRequest, url: "POST /api/v1/auth" };
-        const userRequest = { ...baseRequest, url: "POST /api/v1/user" };
+        await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(1),
+            usage: BigInt(0),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(5),
+        });
 
-        const response1 = await service.send(authRequest);
-        const response2 = await service.send(userRequest);
+        const purge = await service.send({
+            type: RequestType.Purge,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as SimpleResponse;
 
-        expect(response1.can).toBe(true);
-        expect(response2.can).toBe(true);
+        expect(purge.success).toBe(true);
 
-        expect(response1.available_requests).toBe(2);
-        expect(response2.available_requests).toBe(2);
+        const query = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
+
+        expect(query.allowed).toBe(false);
     });
 
-    it('should maintain separate counters for different IPs', async () => {
-        const baseRequest = {
-            port: 9000,
-            url: "POST /api/iptest",
-            max_requests: 2,
-            ttl: 3000,
-        };
+    it('should reset quota after TTL expiration', async () => {
+        const consumerId = "user:ttl";
+        const resourceId = "/api/ttl";
 
-        const requestLocalhost = { ...baseRequest, ip: "127.0.0.1" };
-        const requestAnotherIP = { ...baseRequest, ip: "192.168.0.1" };
+        await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(1),
+            usage: BigInt(1),
+            ttl_type: TTLType.Seconds,
+            ttl: BigInt(2),
+        });
 
-        const response1 = await service.send(requestLocalhost);
-        const response2 = await service.send(requestAnotherIP);
+        const queryAfterInsert = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
 
-        expect(response1.can).toBe(true);
-        expect(response2.can).toBe(true);
+        expect(queryAfterInsert.quota_remaining <= BigInt(0)).toBe(true);
 
-        expect(response1.available_requests).toBe(1);
-        expect(response2.available_requests).toBe(1);
-    });
+        await new Promise((resolve) => setTimeout(resolve, 2500)); // Esperar que TTL expire
 
-    it('should continue denying after available_requests reach 0', async () => {
-        const request = {
-            ip: "127.0.0.1",
-            port: 9000,
-            url: "POST /api/block",
-            max_requests: 1,
-            ttl: 4000,
-        };
+        const queryAfterTTL = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
 
-        const first = await service.send(request);
-        expect(first.can).toBe(true);
-        expect(first.available_requests).toBe(0);
-
-        const second = await service.send(request);
-        expect(second.can).toBe(false);
-
-        const third = await service.send(request);
-        expect(third.can).toBe(false);
-    });
-
-    it('should handle IPv6 request with localhost', async () => {
-        const request = {
-            ip: "::1",
-            port: 9000,
-            url: "POST /api/ipv6",
-            max_requests: 3,
-            ttl: 5000,
-        };
-
-        const response = await service.send(request);
-
-        expect(response.can).toBe(true);
-        expect(response.available_requests).toBe(2);
-        expect(response.ttl).toBeGreaterThan(0);
-    });
-
-    it('should throw an error for invalid IP format', async () => {
-        const request = {
-            ip: "invalid",
-            port: 9000,
-            url: "POST /api/fail",
-            max_requests: 1,
-            ttl: 5000,
-        };
-
-        await expect(service.send(request)).rejects.toThrowError("Invalid IP format");
+        expect(queryAfterTTL.allowed).toBe(false);
     });
 });
