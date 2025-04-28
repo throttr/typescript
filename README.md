@@ -60,7 +60,7 @@ const resourceId = "GET /api/resource";
 await service.connect();
 
 // Insert quota for a consumer-resource pair
-await service.send({
+const insert_response = await service.send({
     type: RequestType.Insert,
     consumer_id: consumerId,
     resource_id: resourceId,
@@ -70,16 +70,32 @@ await service.send({
     ttl: BigInt(3000), // 3 seconds
 });
 
+console.log("Allowed:", insert_response.allowed);
+console.log("Remaining:", insert_response.quota_remaining);
+console.log("TTL:", insert_response.ttl_remaining);
+
+// Update the available quota
+await service.send({
+    type: RequestType.Update,
+    attribute: AttributeType.Quota,
+    change: ChangeType.Decrease,
+    value: BigInt(1),
+    consumer_id: consumerId,
+    resource_id: resourceId,
+});
+
 // Query the available quota
-const response = await service.send({
+const query_response = await service.send({
     type: RequestType.Query,
     consumer_id: consumerId,
     resource_id: resourceId,
 });
 
-console.log(`Allowed: ${response.allowed}, Remaining: ${response.quota_remaining}, TTL: ${response.ttl_remaining}ms`);
+console.log("Allowed:", query_response.allowed);
+console.log("Remaining:", query_response.quota_remaining);
+console.log("TTL:", query_response.ttl_remaining);
 
-// Optionally, update the quota
+// Optionally, purge the quota
 await service.send({
     type: RequestType.Purge,
     consumer_id: consumerId,
