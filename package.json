@@ -1,6 +1,6 @@
 {
   "name": "@throttr/sdk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Node.js client SDK for Throttr TCP server.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
