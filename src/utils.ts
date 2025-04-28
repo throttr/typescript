@@ -14,15 +14,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import {
-    AttributeType,
-    ChangeType,
-    InsertRequest,
-    PurgeRequest,
-    QueryRequest,
     Request,
     RequestType,
-    TTLType,
-    UpdateRequest,
     FullResponse,
     SimpleResponse,
 } from './types';
