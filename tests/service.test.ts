@@ -230,4 +230,27 @@ describe('Service', () => {
 
         expect(queryAfterTTL.allowed).toBe(false);
     });
+
+    it('should TTL type be equals to the TTL assigned', async () => {
+        const consumerId = "user:ttl-type";
+        const resourceId = "/api/ttl-type";
+
+        await service.send({
+            type: RequestType.Insert,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+            quota: BigInt(1),
+            usage: BigInt(1),
+            ttl_type: TTLType.Nanoseconds,
+            ttl: BigInt(100000000),
+        });
+
+        const query = await service.send({
+            type: RequestType.Query,
+            consumer_id: consumerId,
+            resource_id: resourceId,
+        }) as FullResponse;
+
+        expect(query.ttl_type).toBe(TTLType.Nanoseconds);
+    });
 });
