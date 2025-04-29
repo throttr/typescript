@@ -143,11 +143,13 @@ export function parseResponse(
         }
         const allowed = buffer.readUInt8(0) === 1;
         const quota_remaining = buffer.readBigUInt64LE(1);
-        const ttl_remaining = buffer.readBigInt64LE(9);
+        const ttl_type = buffer.readUInt8(9);
+        const ttl_remaining = buffer.readBigInt64LE(10);
 
         return {
             allowed,
             quota_remaining,
+            ttl_type,
             ttl_remaining,
         };
     } else {

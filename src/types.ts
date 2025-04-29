@@ -129,6 +129,11 @@ export interface FullResponse {
     quota_remaining: bigint;
 
     /**
+     * TTL type
+     */
+    ttl_type: TTLType;
+
+    /**
      * TTL remaining
      */
     ttl_remaining: bigint;
