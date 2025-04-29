@@ -72,6 +72,7 @@ const insert_response = await service.send({
 
 console.log("Allowed:", insert_response.allowed);
 console.log("Remaining:", insert_response.quota_remaining);
+console.log("TTL Type:", insert_response.ttl_type);
 console.log("TTL:", insert_response.ttl_remaining);
 
 // Update the available quota
@@ -93,6 +94,7 @@ const query_response = await service.send({
 
 console.log("Allowed:", query_response.allowed);
 console.log("Remaining:", query_response.quota_remaining);
+console.log("TTL Type:", query_response.ttl_type);
 console.log("TTL:", query_response.ttl_remaining);
 
 // Optionally, purge the quota
