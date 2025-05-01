@@ -11,11 +11,6 @@ jobs:
         image: ghcr.io/throttr/throttr:2.1.0-release
         ports:
           - 9000:9000
-        options: >-
-          --health-cmd "bash -c 'echo > /dev/tcp/localhost/9000'" 
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -40,6 +35,13 @@ jobs:
 
       - name: Run tests with coverage report
         run: |
+          for i in {1..10}; do
+            nc -z localhost 9000 && echo "✅ throttr running ... " && break
+            echo "⏳ Try $i: waiting 1s..."
+            sleep 1
+          done
+          
+          nc -z localhost 9000 || (echo "❌ throttr isn't running on port 9000" && exit 1)
           yarn test:coverage
 
       - name: Upload coverage reports to Codecov
