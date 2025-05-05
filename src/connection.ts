@@ -14,7 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from "net";
-import { Request, FullResponse, SimpleResponse, QueuedRequest } from "./types";
+import {Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize} from "./types";
 import { BuildRequest, ParseResponse, GetExpectedResponseSize, GetExpectedResponseType } from "./protocol";
 
 /**
@@ -41,6 +41,13 @@ export class Connection {
      * @private
      */
     private readonly port: number;
+
+    /**
+     * Value size
+     *
+     * @private
+     */
+    private readonly value_size: ValueSize;
 
     /**
      * Queue
@@ -82,10 +89,12 @@ export class Connection {
      *
      * @param host
      * @param port
+     * @param value_size
      */
-    constructor(host: string, port: number) {
+    constructor(host: string, port: number, value_size: ValueSize) {
         this.host = host;
         this.port = port;
+        this.value_size = value_size;
         this.socket = new Socket();
     }
 
@@ -114,8 +123,8 @@ export class Connection {
      * @param request
      */
     send(request: Request): Promise<FullResponse | SimpleResponse> {
-        const buffer = BuildRequest(request);
-        const expectedSize = GetExpectedResponseSize(request);
+        const buffer = BuildRequest(request, this.value_size);
+        const expectedSize = GetExpectedResponseSize(request, this.value_size);
         const expectedType = GetExpectedResponseType(request);
 
         return new Promise((resolve, reject) => {
@@ -160,10 +169,10 @@ export class Connection {
         chunks.push(chunk);
         received += chunk.length;
 
-        if (received >= this.expectedSize) {
+        if (received >= 1) {
             try {
                 const full = Buffer.concat(chunks);
-                const response = ParseResponse(full, this.expectedType);
+                const response = ParseResponse(full, this.expectedType, this.value_size);
                 this.current.resolve(response);
                 /* c8 ignore start */
             } catch (err) {
@@ -197,7 +206,7 @@ export class Connection {
      * Disconnect
      */
     disconnect() {
-        this.socket.removeAllListeners(); // limpieza total
+        this.socket.removeAllListeners();
         this.socket.end();
     }
 }

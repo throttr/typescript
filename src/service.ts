@@ -59,7 +59,7 @@ export class Service {
         /* c8 ignore next */
         const max_connections = (this.config.max_connections ?? 1);
         for (let i = 0; i < max_connections; i++) {
-            const conn = new Connection(this.config.host, this.config.port);
+            const conn = new Connection(this.config.host, this.config.port, this.config.value_size);
             await conn.connect();
             this.connections.push(conn);
         }

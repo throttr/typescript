@@ -28,6 +28,11 @@ export interface Configuration {
     port: number;
 
     /**
+     * Value size
+     */
+    value_size: ValueSize;
+
+    /**
      * Maximum connections
      */
     max_connections?: number;
@@ -40,13 +45,23 @@ export enum RequestType {
     Purge = 0x04,
 }
 
+export enum ValueSize {
+    UInt8 = 0x01,
+    UInt16 = 0x02,
+    UInt32 = 0x04,
+    UInt64 = 0x08,
+}
+
 /**
  * TTL types
  */
 export enum TTLType {
-    Nanoseconds = 0,
-    Milliseconds = 1,
-    Seconds = 2,
+    Nanoseconds = 0x01,
+    Microseconds = 0x02,
+    Milliseconds = 0x03,
+    Seconds = 0x04,
+    Minutes = 0x05,
+    Hours = 0x06,
 }
 
 /**
@@ -71,12 +86,10 @@ export enum ChangeType {
  */
 export interface InsertRequest {
     type: RequestType.Insert;
-    quota: bigint;
-    usage: bigint;
+    quota: number | bigint;
     ttl_type: TTLType;
-    ttl: bigint;
-    consumer_id: string;
-    resource_id: string;
+    ttl: number | bigint;
+    key: string;
 }
 
 /**
@@ -84,8 +97,7 @@ export interface InsertRequest {
  */
 export interface QueryRequest {
     type: RequestType.Query;
-    consumer_id: string;
-    resource_id: string;
+    key: string;
 }
 
 /**
@@ -93,8 +105,7 @@ export interface QueryRequest {
  */
 export interface PurgeRequest {
     type: RequestType.Purge;
-    consumer_id: string;
-    resource_id: string;
+    key: string;
 }
 
 /**
@@ -104,9 +115,8 @@ export interface UpdateRequest {
     type: RequestType.Update;
     attribute: AttributeType;
     change: ChangeType;
-    value: bigint;
-    consumer_id: string;
-    resource_id: string;
+    value: number | bigint;
+    key: string;
 }
 
 /**
@@ -121,12 +131,12 @@ export interface FullResponse {
     /**
      * Allowed
      */
-    allowed: boolean;
+    success: boolean;
 
     /**
      * Quota remaining
      */
-    quota_remaining: bigint;
+    quota: number | bigint;
 
     /**
      * TTL type
@@ -136,7 +146,7 @@ export interface FullResponse {
     /**
      * TTL remaining
      */
-    ttl_remaining: bigint;
+    ttl: number | bigint;
 }
 
 /**
