@@ -119,7 +119,11 @@ export class Connection {
                 expectedType: expectedType,
             });
             console.log("Request:", request);
-            setImmediate(() => this.socket.write(buffer));
+            setImmediate(() => {
+
+                const response = this.socket.write(buffer)
+                console.log("Write response:", response);
+            });
         });
     }
 
