@@ -165,10 +165,12 @@ export class Connection {
             this.readBuffer = this.readBuffer.subarray(totalSize);
 
             try {
+                console.error(`[CI ERROR] queue[0]=${JSON.stringify(current)} buffer=${this.readBuffer.toString('hex')}`);
                 const response = ParseResponse(responseBuffer, current.expectedType, this.value_size);
                 current.resolve(response);
             } catch (err) {
                 current.reject(err);
+                console.error(`[CI ERROR] Failed to parse response: ${err}, buffer=${responseBuffer.toString('hex')}`);
             }
             console.log(`[CI DEBUG] parsing ${current.expectedType}, current buffer size=${this.readBuffer.length}`);
             this.queue.shift();
