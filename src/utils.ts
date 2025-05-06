@@ -26,7 +26,7 @@ function writeOnRequest(
     switch (value_size) {
         case ValueSize.UInt64:
             // @ts-ignore
-            buffer.writeBigUInt64LE(request[attribute], offset);
+            buffer.writeBigUInt64LE(BigInt(request[attribute]), offset);
             break;
         case ValueSize.UInt32:
             // @ts-ignore
