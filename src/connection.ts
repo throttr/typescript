@@ -118,7 +118,7 @@ export class Connection {
                 expectedType: expectedType,
             });
             console.log("Request:", request);
-            process.nextTick(() => this.socket.write(buffer));
+            setImmediate(() => this.socket.write(buffer));
         });
     }
 
