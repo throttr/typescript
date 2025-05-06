@@ -82,10 +82,10 @@ export class Connection {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.socket.on('connect', () => {
+            this.socket.once('connect', () => {
                 resolve();
             });
-            
+
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
                 console.error("Something went wrong", err);
