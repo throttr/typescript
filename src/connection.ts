@@ -142,6 +142,9 @@ export class Connection {
         const totalRead = this.socket.bytesRead;
         const expectedChunkLength = totalRead - this.bytesSeen;
 
+        console.log("Seen", this.bytesSeen);
+        console.log("READED:", this.socket.bytesRead, "CHUNK LENGTH:", chunk.length);
+
         if (expectedChunkLength < 0) {
             console.warn(`[CI WARN] Detected bytesRead rollback or inconsistency. Resetting counters.`);
             this.bytesSeen = totalRead;
