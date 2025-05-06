@@ -53,7 +53,7 @@ jobs:
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
               env:
-                  SIZE: ${{ matrix.size }}
+                  THROTTR_SIZE: ${{ matrix.size }}
 
             - name: Publish
               if: ${{ github.ref_type == 'tag' && matrix.value_size == 'uint16' }}
