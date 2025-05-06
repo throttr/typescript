@@ -141,79 +141,84 @@ export class Connection {
      */
     private processPendingResponses(chunk: Buffer) {
         const iterationBuffer = Buffer.concat([this.buffer, chunk]);
-
         let offset = 0;
 
-        while (this.queue.length > 0) {
+        while (this.queue.length > 0 && offset < iterationBuffer.length) {
             const current = this.queue[0];
             const type = current.expectedType;
-
-            /* c8 ignore start */
-            if (iterationBuffer.length <= offset) {
-                break;
-            }
-            /* c8 ignore stop */
-
             const firstByte = iterationBuffer.readUInt8(offset);
             offset++;
 
-            if (type === 'simple') {
-                const slice = iterationBuffer.subarray(offset - 1, offset);
-                try {
-                    const response = ParseResponse(slice, type, this.value_size);
-                    current.resolve(response);
-                    /* c8 ignore start */
-                } catch (e) {
-                    current.reject(e);
-                }
-                /* c8 ignore stop */
-                this.queue.shift();
-                continue;
-            }
+            const processed = this.tryHandleResponse(type, current, iterationBuffer, firstByte, offset);
+            if (!processed) break;
 
-            if (type === 'full') {
-                if (firstByte === 0x00) {
-                    const slice = iterationBuffer.subarray(offset - 1, offset);
-                    try {
-                        const response = ParseResponse(slice, type, this.value_size);
-                        current.resolve(response);
-                        /* c8 ignore start */
-                    } catch (e) {
-                        current.reject(e);
-                    }
-                    /* c8 ignore stop */
-                    this.queue.shift();
-                    continue;
-                }
-
-                const expectedLength = this.value_size * 2 + 2;
-
-                /* c8 ignore start */
-                if (iterationBuffer.length < offset - 1 + expectedLength) break;
-                /* c8 ignore stop */
-
-                const slice = iterationBuffer.subarray(offset - 1, offset - 1 + expectedLength);
-
-                try {
-                    const response = ParseResponse(slice, type, this.value_size);
-                    current.resolve(response);
-                    /* c8 ignore start */
-                } catch (e) {
-                    current.reject(e);
-                }
-                /* c8 ignore stop */
-
-                offset += expectedLength;
-                this.queue.shift();
-                continue;
-                /* c8 ignore start */
-            }
-
-            break;
+            offset = processed.offset;
+            this.queue.shift();
         }
-        /* c8 ignore stop */
 
         this.buffer = iterationBuffer.subarray(offset);
+    }
+
+    /**
+     * Try handle response
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param firstByte
+     * @param offset
+     * @private
+     */
+    private tryHandleResponse(
+        type: 'simple' | 'full',
+        current: QueuedRequest,
+        buffer: Buffer,
+        firstByte: number,
+        offset: number
+    ): { offset: number } | false {
+        if (type === 'simple') {
+            const slice = buffer.subarray(offset - 1, offset);
+            return this.tryParse(slice, type, current, offset);
+        }
+
+        if (type === 'full') {
+            if (firstByte === 0x00) {
+                const slice = buffer.subarray(offset - 1, offset);
+                return this.tryParse(slice, type, current, offset);
+            }
+
+            const expectedLength = this.value_size * 2 + 2;
+            if (buffer.length < offset - 1 + expectedLength) return false;
+
+            const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
+            return this.tryParse(slice, type, current, offset + expectedLength);
+        }
+
+        return false;
+    }
+
+    /**
+     * Try parse
+     *
+     * @param slice
+     * @param type
+     * @param current
+     * @param nextOffset
+     * @private
+     */
+    private tryParse(
+        slice: Buffer,
+        type: 'simple' | 'full',
+        current: QueuedRequest,
+        nextOffset: number
+    ): { offset: number } {
+        try {
+            const response = ParseResponse(slice, type, this.value_size);
+            current.resolve(response);
+        } catch (e) {
+            current.reject(e);
+        }
+        return { offset: nextOffset };
     }
 
     /**
