@@ -8,7 +8,7 @@ jobs:
 
         services:
             throttr:
-                image: ghcr.io/throttr/throttr:4.0.6-debug-uint16
+                image: ghcr.io/throttr/throttr:4.0.7-debug-uint16
                 ports:
                     - 9000:9000
 
