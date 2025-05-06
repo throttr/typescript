@@ -85,7 +85,9 @@ export class Connection {
             this.socket.connect(this.port, this.host, () => {
                 this.socket.on('data', (chunk) => this.onData(chunk));
                 this.socket.on('error', (error) => this.onError(error));
-                resolve();
+                this.socket.on('connect', () => {
+                    resolve();
+                })
             });
 
             /* c8 ignore start */
