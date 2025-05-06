@@ -130,6 +130,7 @@ export class Connection {
             console.log("Request:", request);
             console.log("Request Type:", RequestType[request.type]);
             console.log("We write: ", buffer.toString('hex'))
+            console.log("We write: ", buffer)
             const response = this.socket.write(buffer)
             console.log("Write response:", response);
         });
