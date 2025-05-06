@@ -42,7 +42,7 @@ describe('Service', () => {
     });
 
     it('it should be compatible with throttr server', async () => {
-        const key = 'user:/api/insert';
+        const key = '333333';
 
         // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
 

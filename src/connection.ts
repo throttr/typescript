@@ -226,7 +226,7 @@ export class Connection {
                 } catch (e) {
                     console.error(`[CI ERROR] simple parse error=${(e as Error).message}`);
                     current.reject(e);
-                } 
+                }
                 this.queue.shift();
                 continue;
             }
