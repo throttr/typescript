@@ -35,25 +35,6 @@ export function ParseResponse(buffer: Buffer, expected: 'full' | 'simple', value
 }
 
 /**
- * Get expected response size
- *
- * @param request
- * @param value_size
- */
-export function GetExpectedResponseSize(request: Request, value_size: ValueSize): number {
-    switch (request.type) {
-        case RequestType.Query:
-            return value_size.valueOf() * 2 + 1;
-        case RequestType.Insert:
-        case RequestType.Update:
-        case RequestType.Purge:
-            return 1;
-        default:
-            throw new Error('Unknown request type');
-    }
-}
-
-/**
  * Get expected response type
  *
  * @param request

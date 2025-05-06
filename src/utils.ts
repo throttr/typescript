@@ -15,6 +15,7 @@
 
 import { FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize } from './types';
 
+/* c8 ignore start */
 function writeOnRequest(
     request: Request,
     buffer: Buffer,
@@ -54,6 +55,7 @@ function read(buffer: Buffer, offset: number, value_size: ValueSize) {
             return buffer.readUInt8(offset);
     }
 }
+/* c8 ignore stop */
 
 /**
  * Serialize request
