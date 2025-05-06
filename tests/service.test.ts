@@ -50,14 +50,13 @@ describe('Service', () => {
         service.disconnect();
     });
     
-    const flexNumber = (bigInt: boolean, number: number) => {
-        return bigInt ? BigInt(number) : number
-    }
+    const flexNumber = (bigInt: boolean, number: number) => bigInt ? BigInt(number) : number; // NOSONAR
 
     it('it should be compatible with throttr server',
         async () => {
             const key = '333333';
             const isBigInt = process.env.THROTTR_SIZE === 'uint64';
+            await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
             // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
 
