@@ -15,7 +15,7 @@
 
 import { Socket } from "net";
 import {Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize} from "./types";
-import { BuildRequest, ParseResponse, GetExpectedResponseSize, GetExpectedResponseType } from "./protocol";
+import { BuildRequest, ParseResponse, GetExpectedResponseType } from "./protocol";
 
 /**
  * Connection
@@ -57,20 +57,11 @@ export class Connection {
     private readonly queue: QueuedRequest[] = [];
 
     /**
-     * Read buffer
-     *
-     * @private
-     */
-    private readBuffer: Buffer = Buffer.alloc(0);
-
-    /**
      * Buffer
      *
      * @private
      */
     private buffer: Buffer = Buffer.alloc(0);
-
-    private parsing = false;
 
     /**
      * Constructor
@@ -169,7 +160,7 @@ export class Connection {
                     continue;
                 }
 
-                const expectedLength = 1 + (this.value_size * 2) + 1; // header + 2 fields + status
+                const expectedLength = (this.value_size * 2) + 2;
                 if (iterationBuffer.length < (offset - 1 + expectedLength)) break;
 
                 const slice = iterationBuffer.subarray(offset - 1, offset - 1 + expectedLength);
@@ -193,7 +184,6 @@ export class Connection {
      */
     private handleError(error: Error) {
         if (this.queue.length > 0) {
-            console.log(`[CI DEBUG] on error=${error.message} current buffer size=${this.readBuffer.length}`);
             const current = this.queue.shift()!;
             current.reject(error);
         }
