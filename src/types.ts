@@ -183,11 +183,6 @@ export interface QueuedRequest {
     reject: (error: any) => void;
 
     /**
-     * Expected size
-     */
-    expectedSize: number;
-
-    /**
      * Expected type
      */
     expectedType: 'full' | 'simple';

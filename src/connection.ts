@@ -57,32 +57,11 @@ export class Connection {
     private readonly queue: QueuedRequest[] = [];
 
     /**
-     * Busy
+     * Read buffer
      *
      * @private
      */
-    private busy: boolean = false;
-
-    /**
-     * Current expected size
-     *
-     * @private
-     */
-    private expectedSize: number = 0;
-
-    /**
-     * Current expected type
-     *
-     * @private
-     */
-    private expectedType: 'full' | 'simple' = 'full';
-
-    /**
-     * Current queued request
-     *
-     * @private
-     */
-    private current?: QueuedRequest;
+    private readBuffer: Buffer = Buffer.alloc(0);
 
     /**
      * Constructor
@@ -124,32 +103,17 @@ export class Connection {
      */
     send(request: Request): Promise<FullResponse | SimpleResponse> {
         const buffer = BuildRequest(request, this.value_size);
-        const expectedSize = GetExpectedResponseSize(request, this.value_size);
         const expectedType = GetExpectedResponseType(request);
 
         return new Promise((resolve, reject) => {
-            this.queue.push({ buffer, resolve, reject, expectedSize, expectedType });
-            this.processQueue();
+            this.queue.push({
+                buffer: buffer,
+                resolve: resolve,
+                reject: reject,
+                expectedType: expectedType,
+            });
+            this.socket.write(buffer);
         });
-    }
-
-    /**
-     * Process queue
-     *
-     * @private
-     */
-    private processQueue() {
-        if (this.busy || this.queue.length === 0) {
-            return;
-        }
-
-        const next = this.queue.shift()!;
-        this.current = next;
-        this.busy = true;
-        this.expectedSize = next.expectedSize;
-        this.expectedType = next.expectedType;
-
-        this.socket.write(next.buffer);
     }
 
     /**
@@ -159,30 +123,50 @@ export class Connection {
      * @private
      */
     private handleData(chunk: Buffer) {
-        if (!this.current) {
-            return;
-        }
+        this.readBuffer = Buffer.concat([this.readBuffer, chunk]);
+        this.processPendingResponses();
+    }
 
-        const chunks: Buffer[] = [];
-        let received = 0;
+    /**
+     * Process pending responses
+     *
+     * @private
+     */
+    private processPendingResponses() {
+        while (this.queue.length > 0) {
+            const current = this.queue[0];
+            const type = current.expectedType;
 
-        chunks.push(chunk);
-        received += chunk.length;
+            if (this.readBuffer.length < 1) return;
 
-        if (received >= 1) {
-            try {
-                const full = Buffer.concat(chunks);
-                const response = ParseResponse(full, this.expectedType, this.value_size);
-                this.current.resolve(response);
-                /* c8 ignore start */
-            } catch (err) {
-                this.current.reject(err);
+            const firstByte = this.readBuffer.readUInt8(0);
+
+            let totalSize = 1;
+
+            if (type === "full") {
+                if (firstByte === 0x00) {
+                    totalSize = 1;
+                } else if (firstByte === 0x01) {
+                    totalSize = 1 + (this.value_size.valueOf() * 2) + 1;
+                } else {
+                    // byte inválido, espera más datos
+                    return;
+                }
             }
-            /* c8 ignore stop */
 
-            this.current = undefined;
-            this.busy = false;
-            this.processQueue();
+            if (this.readBuffer.length < totalSize) return;
+
+            const responseBuffer = this.readBuffer.subarray(0, totalSize);
+            this.readBuffer = this.readBuffer.subarray(totalSize);
+
+            try {
+                const response = ParseResponse(responseBuffer, current.expectedType, this.value_size);
+                current.resolve(response);
+            } catch (err) {
+                current.reject(err);
+            }
+
+            this.queue.shift();
         }
     }
 
@@ -193,13 +177,10 @@ export class Connection {
      * @private
      */
     private handleError(error: Error) {
-        if (this.current) {
-            this.current.reject(error);
-            this.current = undefined;
+        if (this.queue.length > 0) {
+            const current = this.queue.shift()!;
+            current.reject(error);
         }
-
-        this.busy = false;
-        this.processQueue();
     }
 
     /**
