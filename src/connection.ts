@@ -14,7 +14,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import {Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize, RequestType} from './types';
+import {
+    Request,
+    FullResponse,
+    SimpleResponse,
+    QueuedRequest,
+    ValueSize,
+    RequestType,
+} from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 
 /**
@@ -63,15 +70,6 @@ export class Connection {
      */
     private buffer: Buffer = Buffer.alloc(0);
 
-    private pendingChunks: Buffer[] = [];
-    private processing = false;
-
-    /**
-     * Bytes vistos por nosotros
-     */
-    private bytesSeen: number = 0;
-
-
     /**
      * Constructor
      *
@@ -92,7 +90,6 @@ export class Connection {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
                 reject(err);
@@ -100,9 +97,8 @@ export class Connection {
             /* c8 ignore stop */
 
             this.socket.connect(this.port, this.host, () => {
-
-                this.socket.on('data', (chunk) => this.onData(chunk));
-                this.socket.on('error', (error) => this.onError(error));
+                this.socket.on('data', chunk => this.onData(chunk));
+                this.socket.on('error', error => this.onError(error));
 
                 resolve();
             });
@@ -125,7 +121,7 @@ export class Connection {
                 reject: reject,
                 expectedType: expectedType,
             });
-            this.socket.write(buffer)
+            this.socket.write(buffer);
         });
     }
 
@@ -136,36 +132,7 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
-        const totalRead = this.socket.bytesRead;
-        const expectedChunkLength = totalRead - this.bytesSeen;
-
-        if (expectedChunkLength < 0) {
-            this.bytesSeen = totalRead;
-            return;
-        }
-
-        let effectiveChunk = chunk;
-        if (chunk.length > expectedChunkLength) {
-            effectiveChunk = chunk.subarray(0, expectedChunkLength);
-        }
-
-        this.bytesSeen += effectiveChunk.length;
-        this.pendingChunks.push(effectiveChunk);
-        this.tryProcess();
-    }
-
-    private tryProcess() {
-        if (this.processing) {
-            return;
-        }
-        this.processing = true;
-
-        while (this.pendingChunks.length > 0) {
-            const chunk = this.pendingChunks.shift()!;
-            this.processPendingResponses(chunk);
-        }
-
-        this.processing = false;
+        setImmediate(() => this.processPendingResponses(chunk));
     }
 
     /**
@@ -236,8 +203,7 @@ export class Connection {
             break;
         }
 
-        const remaining = iterationBuffer.subarray(offset);
-        this.buffer = remaining;
+        this.buffer = iterationBuffer.subarray(offset);
     }
 
     /**
