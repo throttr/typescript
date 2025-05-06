@@ -16,7 +16,7 @@
 import { FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize } from './types';
 
 function writeOnRequest(
-    request: Request | any,
+    request: Request,
     buffer: Buffer,
     attribute: any,
     offset: number,
@@ -24,15 +24,19 @@ function writeOnRequest(
 ) {
     switch (value_size) {
         case ValueSize.UInt64:
+            // @ts-ignore
             buffer.writeBigUInt64LE(request[attribute], offset);
             break;
         case ValueSize.UInt32:
+            // @ts-ignore
             buffer.writeUint32LE(request[attribute], offset);
             break;
         case ValueSize.UInt16:
+            // @ts-ignore
             buffer.writeUint16LE(request[attribute], offset);
             break;
         case ValueSize.UInt8:
+            // @ts-ignore
             buffer.writeUint8(request[attribute], offset);
             break;
     }
