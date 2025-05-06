@@ -138,14 +138,25 @@ export class Connection {
     }
 
     private tryProcess() {
-        if (this.processing) return;
+        console.log("Try processing");
+        if (this.processing) {
+            console.log("Another is processing...");
+            return;
+        }
+        console.log("Processing flag turn on")
         this.processing = true;
+
+        if (this.pendingChunks.length == 0) {
+            console.log("Chunks empty ...")
+        }
 
         while (this.pendingChunks.length > 0) {
             const chunk = this.pendingChunks.shift()!;
+            console.log("Processing Chunk:", chunk);
             this.processPendingResponses(chunk);
         }
 
+        console.log("Flag is turning down");
         this.processing = false;
     }
 
