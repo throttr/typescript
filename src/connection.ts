@@ -83,8 +83,8 @@ export class Connection {
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.socket.connect(this.port, this.host, () => {
-                this.socket.on('data', this.onData);
-                this.socket.on('error', this.onError);
+                this.socket.on('data', (chunk) => this.onData(chunk));
+                this.socket.on('error', (error) => this.onError(error));
                 resolve();
             });
 
