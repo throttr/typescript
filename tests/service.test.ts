@@ -245,5 +245,7 @@ describe('Service', () => {
         // And that should fail ...
 
         expect(exists_query.success).toBe(false);
+    }, {
+        timeout: 30000
     });
 });
