@@ -38,8 +38,6 @@ describe('Service', () => {
             uint64: ValueSize.UInt64,
         }[size] as ValueSize;
 
-        console.log(value_size);
-
         service = new Service({
             host: '127.0.0.1',
             port: 9000,

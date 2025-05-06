@@ -51,6 +51,7 @@ jobs:
                 THROTTR_SIZE: ${{ matrix.size }}
 
             - name: Upload coverage reports to Codecov
+              if: ${{ matrix.value_size == 'uint16' }}
               uses: codecov/codecov-action@v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
