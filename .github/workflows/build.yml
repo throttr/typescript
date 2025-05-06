@@ -6,9 +6,13 @@ jobs:
     build:
         runs-on: ubuntu-latest
 
+        strategy:
+          matrix:
+            size: [ uint8, uint16, uint32, uint64 ]
+
         services:
             throttr:
-                image: ghcr.io/throttr/throttr:4.0.7-debug-uint16
+                image: ghcr.io/throttr/throttr:4.0.7-debug-${{ matrix.size }}
                 ports:
                     - 9000:9000
 
@@ -19,7 +23,7 @@ jobs:
             - name: Set up Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: '20'
+                  node-version: '22'
 
             - name: Install Yarn
               run: |
@@ -50,7 +54,7 @@ jobs:
                   token: ${{ secrets.CODECOV_TOKEN }}
 
             - name: Publish
-              if: ${{ github.ref_type == 'tag' }}
+              if: ${{ github.ref_type == 'tag' && matrix.value_size == 'uint16' }}
               run: |
                   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
                   npm publish --access public

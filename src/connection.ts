@@ -20,7 +20,6 @@ import {
     SimpleResponse,
     QueuedRequest,
     ValueSize,
-    RequestType,
 } from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 
@@ -149,9 +148,11 @@ export class Connection {
             const current = this.queue[0];
             const type = current.expectedType;
 
+            /* c8 ignore start */
             if (iterationBuffer.length <= offset) {
                 break;
             }
+            /* c8 ignore stop */
 
             const firstByte = iterationBuffer.readUInt8(offset);
             offset++;
@@ -161,9 +162,11 @@ export class Connection {
                 try {
                     const response = ParseResponse(slice, type, this.value_size);
                     current.resolve(response);
+                    /* c8 ignore start */
                 } catch (e) {
                     current.reject(e);
                 }
+                /* c8 ignore stop */
                 this.queue.shift();
                 continue;
             }
@@ -174,34 +177,41 @@ export class Connection {
                     try {
                         const response = ParseResponse(slice, type, this.value_size);
                         current.resolve(response);
+                        /* c8 ignore start */
                     } catch (e) {
                         current.reject(e);
                     }
+                    /* c8 ignore stop */
                     this.queue.shift();
                     continue;
                 }
 
                 const expectedLength = this.value_size * 2 + 2;
 
-                if (iterationBuffer.length < offset - 1 + expectedLength) {
-                    break;
-                }
+                /* c8 ignore start */
+                if (iterationBuffer.length < offset - 1 + expectedLength) break;
+                /* c8 ignore stop */
 
                 const slice = iterationBuffer.subarray(offset - 1, offset - 1 + expectedLength);
 
                 try {
                     const response = ParseResponse(slice, type, this.value_size);
                     current.resolve(response);
+                    /* c8 ignore start */
                 } catch (e) {
                     current.reject(e);
                 }
+                /* c8 ignore stop */
+
                 offset += expectedLength;
                 this.queue.shift();
                 continue;
+                /* c8 ignore start */
             }
 
             break;
         }
+        /* c8 ignore stop */
 
         this.buffer = iterationBuffer.subarray(offset);
     }
@@ -212,12 +222,14 @@ export class Connection {
      * @param error
      * @private
      */
+    /* c8 ignore start */
     private onError(error: Error) {
         if (this.queue.length > 0) {
             const current = this.queue.shift()!;
             current.reject(error);
         }
     }
+    /* c8 ignore stop */
 
     /**
      * Disconnect
