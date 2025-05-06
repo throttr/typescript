@@ -45,7 +45,6 @@ describe('Service', () => {
         const key = '333333';
 
         // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
-        console.log("AWAIT1");
 
         const insert = (await service.send({
             type: RequestType.Insert,
@@ -55,8 +54,6 @@ describe('Service', () => {
             ttl: 60,
         })) as SimpleResponse;
 
-        console.log("AWAIT1");
-
         expect(typeof insert.success).toBe('boolean');
 
         // And that should be accepted ...
@@ -64,14 +61,11 @@ describe('Service', () => {
         expect(insert.success).toBe(true);
 
         // After that, we are going to make a QUERY to see what was stored ...
-        console.log("AWAIT2");
 
         const first_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as FullResponse;
-
-        console.log("AWAIT2");
 
         expect(typeof first_query.success).toBe('boolean');
         expect(typeof first_query.quota).toBe('number');
@@ -87,7 +81,6 @@ describe('Service', () => {
         expect(first_query.ttl).toBeLessThan(60);
 
         // Right now we will UPDATE the quota to zero using "decrease" operation ...
-        console.log("AWAIT3");
 
         const success_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -97,8 +90,6 @@ describe('Service', () => {
             value: 7,
         })) as SimpleResponse;
 
-        console.log("AWAIT3");
-
         expect(typeof success_decrease_update.success).toBe('boolean');
 
         // And that should be fine ...
@@ -106,7 +97,6 @@ describe('Service', () => {
         expect(success_decrease_update.success).toBe(true);
 
         // After that we're going to check if we can "decrease" again ...
-        console.log("AWAIT4");
 
         const failed_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -116,8 +106,6 @@ describe('Service', () => {
             value: 7,
         })) as SimpleResponse;
 
-        console.log("AWAIT4");
-
         expect(typeof failed_decrease_update.success).toBe('boolean');
 
         // But that should fail ...
@@ -125,14 +113,11 @@ describe('Service', () => {
         expect(failed_decrease_update.success).toBe(false);
 
         // After that we're going to query to see how much "Quota" we have ...
-        console.log("AWAIT5");
 
         const empty_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as FullResponse;
-
-        console.log("AWAIT5");
 
         expect(typeof empty_quota_query.success).toBe('boolean');
         expect(typeof empty_quota_query.quota).toBe('number');
@@ -148,7 +133,6 @@ describe('Service', () => {
         expect(empty_quota_query.ttl).toBeLessThan(60);
 
         // After that we're going to UPDATE to "patch" the "Quota" to 10 ...
-        console.log("AWAIT6");
 
         const success_patch_update = (await service.send({
             type: RequestType.Update,
@@ -158,8 +142,6 @@ describe('Service', () => {
             value: 10,
         })) as SimpleResponse;
 
-        console.log("AWAIT6");
-
         expect(typeof success_patch_update.success).toBe('boolean');
 
         // And that should be fine ...
@@ -167,14 +149,11 @@ describe('Service', () => {
         expect(success_patch_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
-        console.log("AWAIT7");
 
         const patched_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as FullResponse;
-
-        console.log("AWAIT7");
 
         expect(typeof patched_quota_query.success).toBe('boolean');
         expect(typeof patched_quota_query.quota).toBe('number');
@@ -190,7 +169,6 @@ describe('Service', () => {
         expect(patched_quota_query.ttl).toBeLessThan(60);
 
         // After that we're going to UPDATE to "increase" the "Quota" by 20 ...
-        console.log("AWAIT8");
 
         const success_increase_update = (await service.send({
             type: RequestType.Update,
@@ -200,8 +178,6 @@ describe('Service', () => {
             value: 20,
         })) as SimpleResponse;
 
-        console.log("AWAIT8");
-
         expect(typeof success_increase_update.success).toBe('boolean');
 
         // And that should be fine ...
@@ -209,14 +185,11 @@ describe('Service', () => {
         expect(success_increase_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
-        console.log("AWAIT9");
 
         const increased_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as FullResponse;
-
-        console.log("AWAIT9");
 
         expect(typeof increased_quota_query.success).toBe('boolean');
         expect(typeof increased_quota_query.quota).toBe('number');
@@ -232,14 +205,11 @@ describe('Service', () => {
         expect(increased_quota_query.ttl).toBeLessThan(60);
 
         // After that we're going to purge the key ...
-        console.log("AWAIT10");
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
             key: key,
         })) as SimpleResponse;
-
-        console.log("AWAIT11");
 
         expect(typeof success_purge.success).toBe('boolean');
 
@@ -248,14 +218,11 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to try again ...
-        console.log("AWAIT12");
 
         const failed_purge = (await service.send({
             type: RequestType.Purge,
             key: key,
         })) as SimpleResponse;
-
-        console.log("AWAIT12");
 
         expect(typeof failed_purge.success).toBe('boolean');
 
@@ -264,14 +231,11 @@ describe('Service', () => {
         expect(failed_purge.success).toBe(false);
 
         // After that we're going to query to see if key exists ...
-        console.log("AWAIT13");
 
         const exists_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as FullResponse;
-
-        console.log("AWAIT13");
 
         expect(typeof exists_query.success).toBe('boolean');
         expect(typeof exists_query.quota).toBe('number');
