@@ -66,10 +66,10 @@ describe('Service', () => {
         // After that, we are going to make a QUERY to see what was stored ...
         console.log("AWAIT2");
 
-        const first_query = await service.send({
+        const first_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        }) as FullResponse;
+        })) as FullResponse;
 
         console.log("AWAIT2");
 

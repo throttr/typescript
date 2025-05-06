@@ -92,11 +92,6 @@ export class Connection {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.socket.on('data', (chunk) => this.onData(chunk));
-            this.socket.on('error', (error) => this.onError(error));
-            this.socket.on('drain', () => {
-                console.log("Socket write drained");
-            })
 
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
@@ -106,6 +101,14 @@ export class Connection {
             /* c8 ignore stop */
 
             this.socket.connect(this.port, this.host, () => {
+
+                this.socket.on('data', (chunk) => this.onData(chunk));
+                this.socket.on('error', (error) => this.onError(error));
+                this.socket.on('end', () => console.log("end"));
+                this.socket.on('lookup', () => console.log("lookup"));
+                this.socket.on('ready', () => console.log("ready"));
+                this.socket.on('timeout', () => console.log("timeout"));
+
                 resolve();
             });
         });
