@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import {afterAll, beforeAll, describe, expect, it} from "vitest";
-import {Connection} from "../src/connection";
-import {RequestType, ValueSize} from "../src";
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { Connection } from '../src/connection';
+import { RequestType, ValueSize } from '../src';
 
 describe('Connection', () => {
     let connection: Connection;
 
     beforeAll(async () => {
-        connection = new Connection("127.0.0.1", 9000, ValueSize.UInt16);
+        connection = new Connection('127.0.0.1', 9000, ValueSize.UInt16);
         await connection.connect();
     });
 
@@ -32,7 +32,7 @@ describe('Connection', () => {
     it('should handle socket error correctly', async () => {
         const sendPromise = connection.send({
             type: RequestType.Query,
-            key: "abc",
+            key: 'abc',
         });
 
         // Forzar un error manualmente
@@ -48,7 +48,7 @@ describe('Connection', () => {
     });
 
     it('should disconnect and remove all listeners', async () => {
-        const tempConnection = new Connection("127.0.0.1", 9000, ValueSize.UInt8);
+        const tempConnection = new Connection('127.0.0.1', 9000, ValueSize.UInt8);
         await tempConnection.connect();
         tempConnection.disconnect();
 

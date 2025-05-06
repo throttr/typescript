@@ -13,9 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import {FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize,} from './types';
+import { FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize } from './types';
 
-function writeOnRequest(request: Request|any, buffer: Buffer, attribute: any, offset: number, value_size: ValueSize) {
+function writeOnRequest(
+    request: Request | any,
+    buffer: Buffer,
+    attribute: any,
+    offset: number,
+    value_size: ValueSize
+) {
     switch (value_size) {
         case ValueSize.UInt64:
             buffer.writeBigUInt64LE(request[attribute], offset);
@@ -58,21 +64,21 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                value_size.valueOf() + // quota (little endian)
-                1 + // ttl_type
-                value_size.valueOf() + // ttl (little endian)
-                1 + // key_size
-                keyBuffer.length
+                    value_size.valueOf() + // quota (little endian)
+                    1 + // ttl_type
+                    value_size.valueOf() + // ttl (little endian)
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
             buffer.writeUInt8(request.type, offset);
             offset += 1;
-            writeOnRequest(request, buffer, 'quota', offset, value_size)
+            writeOnRequest(request, buffer, 'quota', offset, value_size);
             offset += value_size.valueOf();
             buffer.writeUInt8(request.ttl_type, offset);
             offset += 1;
-            writeOnRequest(request, buffer, 'ttl', offset, value_size)
+            writeOnRequest(request, buffer, 'ttl', offset, value_size);
             offset += value_size.valueOf();
             buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
@@ -86,8 +92,8 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // key_size
-                keyBuffer.length
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
@@ -104,11 +110,11 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // attribute
-                1 + // change
-                value_size.valueOf() + // value (little endian)
-                1 + // key_size
-                keyBuffer.length
+                    1 + // attribute
+                    1 + // change
+                    value_size.valueOf() + // value (little endian)
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
@@ -118,7 +124,7 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
             offset += 1;
             buffer.writeUInt8(request.change, offset);
             offset += 1;
-            writeOnRequest(request, buffer, 'value', offset, value_size)
+            writeOnRequest(request, buffer, 'value', offset, value_size);
             offset += value_size.valueOf();
             buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
@@ -150,7 +156,7 @@ export function parseResponse(
                 quota: 0,
                 ttl_type: TTLType.Nanoseconds,
                 ttl: 0,
-            }
+            };
         }
 
         let offset = 0;

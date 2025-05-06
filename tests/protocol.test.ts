@@ -13,14 +13,16 @@
 // // You should have received a copy of the GNU Affero General Public License
 // // along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
-import {describe, expect, it} from "vitest";
-import {GetExpectedResponseSize, GetExpectedResponseType} from "../src/protocol";
-import {Request, ValueSize} from "../src";
+import { describe, expect, it } from 'vitest';
+import { GetExpectedResponseSize, GetExpectedResponseType } from '../src/protocol';
+import { Request, ValueSize } from '../src';
 
 describe('Protocol', () => {
     it('should throw error on unknown request type for response size', () => {
         const fakeRequest = { type: 99 } as unknown as Request;
-        expect(() => GetExpectedResponseSize(fakeRequest, ValueSize.UInt8)).toThrowError('Unknown request type');
+        expect(() => GetExpectedResponseSize(fakeRequest, ValueSize.UInt8)).toThrowError(
+            'Unknown request type'
+        );
     });
 
     it('should throw error on unknown request type for response type', () => {

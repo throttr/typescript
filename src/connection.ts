@@ -13,9 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Socket } from "net";
-import {Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize} from "./types";
-import { BuildRequest, ParseResponse, GetExpectedResponseType } from "./protocol";
+import { Socket } from 'net';
+import { Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize } from './types';
+import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 
 /**
  * Connection
@@ -83,8 +83,8 @@ export class Connection {
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.socket.connect(this.port, this.host, () => {
-                this.socket.on('data', (chunk) => this.handleData(chunk));
-                this.socket.on('error', (err) => this.handleError(err));
+                this.socket.on('data', chunk => this.onData(chunk));
+                this.socket.on('error', err => this.onError(err));
                 resolve();
             });
 
@@ -122,7 +122,7 @@ export class Connection {
      * @param chunk
      * @private
      */
-    private handleData(chunk: Buffer) {
+    private onData(chunk: Buffer) {
         setImmediate(() => this.processPendingResponses(chunk));
     }
 
@@ -145,14 +145,14 @@ export class Connection {
             const firstByte = iterationBuffer.readUInt8(offset);
             offset++;
 
-            if (type === "simple") {
+            if (type === 'simple') {
                 const slice = iterationBuffer.subarray(offset - 1, offset);
                 current.resolve(ParseResponse(slice, type, this.value_size));
                 this.queue.shift();
                 continue;
             }
 
-            if (type === "full") {
+            if (type === 'full') {
                 if (firstByte === 0x00) {
                     const slice = iterationBuffer.subarray(offset - 1, offset);
                     current.resolve(ParseResponse(slice, type, this.value_size));
@@ -160,8 +160,8 @@ export class Connection {
                     continue;
                 }
 
-                const expectedLength = (this.value_size * 2) + 2;
-                if (iterationBuffer.length < (offset - 1 + expectedLength)) break;
+                const expectedLength = this.value_size * 2 + 2;
+                if (iterationBuffer.length < offset - 1 + expectedLength) break;
 
                 const slice = iterationBuffer.subarray(offset - 1, offset - 1 + expectedLength);
                 current.resolve(ParseResponse(slice, type, this.value_size));
@@ -182,7 +182,7 @@ export class Connection {
      * @param error
      * @private
      */
-    private handleError(error: Error) {
+    private onError(error: Error) {
         if (this.queue.length > 0) {
             const current = this.queue.shift()!;
             current.reject(error);

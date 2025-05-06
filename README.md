@@ -24,7 +24,6 @@ TypeScript/Node.js client for communicating with a Throttr server over TCP.
 
 The SDK enables sending traffic control requests efficiently, without HTTP, respecting the server's native binary protocol.
 
-
 ## 🛠️ Installation
 
 Add the dependency using Yarn or NPM:
@@ -42,19 +41,19 @@ npm install @throttr/sdk
 ## Basic Usage
 
 ```typescript
-import { Service, RequestType, TTLType, AttributeType, ChangeType } from "@throttr/sdk";
+import { Service, RequestType, TTLType, AttributeType, ChangeType } from '@throttr/sdk';
 
 const service = new Service({
-    host: "127.0.0.1",
+    host: '127.0.0.1',
     port: 9000,
     max_connections: 4, // Optional: configure concurrent connections
 });
 
 // Define a consumer (example: IP + port, UUID, or custom identifier)
-const consumerId = "127.0.0.1:1234";
+const consumerId = '127.0.0.1:1234';
 
 // Define a resource (example: METHOD + URL, or any identifier)
-const resourceId = "GET /api/resource";
+const resourceId = 'GET /api/resource';
 
 // Connect to Throttr
 await service.connect();
@@ -70,10 +69,10 @@ const insert_response = await service.send({
     ttl: BigInt(3000), // 3 seconds
 });
 
-console.log("Allowed:", insert_response.allowed);
-console.log("Remaining:", insert_response.quota_remaining);
-console.log("TTL Type:", insert_response.ttl_type);
-console.log("TTL:", insert_response.ttl_remaining);
+console.log('Allowed:', insert_response.allowed);
+console.log('Remaining:', insert_response.quota_remaining);
+console.log('TTL Type:', insert_response.ttl_type);
+console.log('TTL:', insert_response.ttl_remaining);
 
 // Update the available quota
 await service.send({
@@ -92,10 +91,10 @@ const query_response = await service.send({
     resource_id: resourceId,
 });
 
-console.log("Allowed:", query_response.allowed);
-console.log("Remaining:", query_response.quota_remaining);
-console.log("TTL Type:", query_response.ttl_type);
-console.log("TTL:", query_response.ttl_remaining);
+console.log('Allowed:', query_response.allowed);
+console.log('Remaining:', query_response.quota_remaining);
+console.log('TTL Type:', query_response.ttl_type);
+console.log('TTL:', query_response.ttl_remaining);
 
 // Optionally, purge the quota
 await service.send({
