@@ -55,7 +55,7 @@ describe('Service', () => {
     it('it should be compatible with throttr server',
         async () => {
             const key = '333333';
-            const isBigInt = process.env.VALUE_SIZE === 'uint64';
+            const isBigInt = process.env.THROTTR_SIZE === 'uint64';
 
             // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
 
