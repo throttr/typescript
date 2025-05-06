@@ -111,17 +111,14 @@ export class Connection {
         const expectedType = GetExpectedResponseType(request);
 
         return new Promise((resolve, reject) => {
-            setImmediate(() => {
-                const event = {
-                    buffer: buffer,
-                    resolve: resolve,
-                    reject: reject,
-                    expectedType: expectedType,
-                };
-                this.queue.push(event);
-                console.log("Request:", request);
-                setImmediate(() => this.socket.write(buffer));
-            })
+            this.queue.push({
+                buffer: buffer,
+                resolve: resolve,
+                reject: reject,
+                expectedType: expectedType,
+            });
+            console.log("Request:", request);
+            process.nextTick(() => this.socket.write(buffer));
         });
     }
 
