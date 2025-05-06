@@ -126,7 +126,7 @@ export class Connection {
         console.log(`[CI DEBUG] buffer=${chunk.toString('hex')}, queue=${this.queue.length}`);
         console.log(`[CI DEBUG] readBuffer=${this.readBuffer.toString('hex')}, queue=${this.queue.length}`);
         this.readBuffer = Buffer.concat([this.readBuffer, chunk]);
-        this.processPendingResponses();
+        setImmediate(() => this.processPendingResponses());
     }
 
     /**
