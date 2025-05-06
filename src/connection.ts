@@ -108,12 +108,14 @@ export class Connection {
 
         return new Promise((resolve, reject) => {
             setImmediate(() => {
-                this.queue.push({
+                const event = {
                     buffer: buffer,
                     resolve: resolve,
                     reject: reject,
                     expectedType: expectedType,
-                });
+                };
+                this.queue.push(event);
+                console.log("Request:", request);
                 setImmediate(() => this.socket.write(buffer));
             })
         });
