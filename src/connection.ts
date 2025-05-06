@@ -82,20 +82,21 @@ export class Connection {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.socket.connect(this.port, this.host, () => {
-                this.socket.on('data', (chunk) => this.onData(chunk));
-                this.socket.on('error', (error) => this.onError(error));
-                this.socket.on('connect', () => {
-                    resolve();
-                })
+            this.socket.on('connect', () => {
+                resolve();
             });
-
+            
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
                 console.error("Something went wrong", err);
                 reject(err);
             });
             /* c8 ignore stop */
+
+            this.socket.connect(this.port, this.host, () => {
+                this.socket.on('data', (chunk) => this.onData(chunk));
+                this.socket.on('error', (error) => this.onError(error));
+            });
         });
     }
 
