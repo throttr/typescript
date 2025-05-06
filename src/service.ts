@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Configuration, Request, FullResponse, SimpleResponse } from "./types";
-import { Connection } from "./connection";
+import { Configuration, Request, FullResponse, SimpleResponse } from './types';
+import { Connection } from './connection';
 
 /**
  * Service
@@ -57,9 +57,9 @@ export class Service {
      */
     async connect() {
         /* c8 ignore next */
-        const max_connections = (this.config.max_connections ?? 1);
+        const max_connections = this.config.max_connections ?? 1;
         for (let i = 0; i < max_connections; i++) {
-            const conn = new Connection(this.config.host, this.config.port);
+            const conn = new Connection(this.config.host, this.config.port, this.config.value_size);
             await conn.connect();
             this.connections.push(conn);
         }
@@ -73,7 +73,7 @@ export class Service {
     async send(request: Request): Promise<FullResponse | SimpleResponse> {
         /* c8 ignore start */
         if (this.connections.length === 0) {
-            throw new Error("No available connections.");
+            throw new Error('No available connections.');
         }
         /* c8 ignore stop */
 

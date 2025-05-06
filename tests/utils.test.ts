@@ -13,23 +13,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { describe, it, expect } from "vitest";
-import { serializeRequest, parseResponse } from "../src/utils";
-import { Request } from "../src";
+import { describe, it, expect } from 'vitest';
+import { serializeRequest, parseResponse } from '../src/utils';
+import { Request, ValueSize } from '../src';
 
 describe('Utils', () => {
     it('should throw error on unsupported request type', () => {
         const fakeRequest = { type: 99 } as unknown as Request;
-        expect(() => serializeRequest(fakeRequest)).toThrowError('Unsupported request type');
-    });
-
-    it('should throw error on invalid full response length', () => {
-        const invalidBuffer = Buffer.alloc(17); // debería ser 18
-        expect(() => parseResponse(invalidBuffer, 'full')).toThrowError(/Invalid full response length/);
+        expect(() => serializeRequest(fakeRequest, ValueSize.UInt16)).toThrowError(
+            'Unsupported request type'
+        );
     });
 
     it('should throw error on invalid simple response length', () => {
         const invalidBuffer = Buffer.alloc(2); // debería ser 1
-        expect(() => parseResponse(invalidBuffer, 'simple')).toThrowError(/Invalid simple response length/);
+        expect(() => parseResponse(invalidBuffer, 'simple', ValueSize.UInt16)).toThrowError(
+            /Invalid simple response length/
+        );
     });
 });

@@ -13,94 +13,114 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import {
-    Request,
-    RequestType,
-    FullResponse,
-    SimpleResponse,
-} from './types';
+import { FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize } from './types';
+
+/* c8 ignore start */
+function writeOnRequest(
+    request: Request,
+    buffer: Buffer,
+    attribute: any,
+    offset: number,
+    value_size: ValueSize
+) {
+    switch (value_size) {
+        case ValueSize.UInt64:
+            // @ts-ignore
+            buffer.writeBigUInt64LE(BigInt(request[attribute]), offset);
+            break;
+        case ValueSize.UInt32:
+            // @ts-ignore
+            buffer.writeUint32LE(request[attribute], offset);
+            break;
+        case ValueSize.UInt16:
+            // @ts-ignore
+            buffer.writeUint16LE(request[attribute], offset);
+            break;
+        case ValueSize.UInt8:
+            // @ts-ignore
+            buffer.writeUint8(request[attribute], offset);
+            break;
+    }
+}
+
+function read(buffer: Buffer, offset: number, value_size: ValueSize) {
+    switch (value_size) {
+        case ValueSize.UInt64:
+            return buffer.readBigUInt64LE(offset);
+        case ValueSize.UInt32:
+            return buffer.readUint32LE(offset);
+        case ValueSize.UInt16:
+            return buffer.readUint16LE(offset);
+        case ValueSize.UInt8:
+            return buffer.readUInt8(offset);
+    }
+}
+/* c8 ignore stop */
 
 /**
  * Serialize request
+ *
+ * @param request
+ * @param value_size
  */
-export function serializeRequest(request: Request): Buffer {
+export function serializeRequest(request: Request, value_size: ValueSize): Buffer {
     switch (request.type) {
         case RequestType.Insert: {
-            const consumerIdBuffer = Buffer.from(request.consumer_id, 'utf-8');
-            const resourceIdBuffer = Buffer.from(request.resource_id, 'utf-8');
+            const keyBuffer = Buffer.from(request.key, 'utf-8');
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                8 + // quota (little endian)
-                8 + // usage (little endian)
-                1 + // ttl_type
-                8 + // ttl (little endian)
-                1 + // consumer_id_size
-                1 + // resource_id_size
-                consumerIdBuffer.length +
-                resourceIdBuffer.length
+                    value_size.valueOf() + // quota (little endian)
+                    1 + // ttl_type
+                    value_size.valueOf() + // ttl (little endian)
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
             buffer.writeUInt8(request.type, offset);
             offset += 1;
-            buffer.writeBigUInt64LE(request.quota, offset);
-            offset += 8;
-            buffer.writeBigUInt64LE(request.usage, offset);
-            offset += 8;
+            writeOnRequest(request, buffer, 'quota', offset, value_size);
+            offset += value_size.valueOf();
             buffer.writeUInt8(request.ttl_type, offset);
             offset += 1;
-            buffer.writeBigUInt64LE(request.ttl, offset);
-            offset += 8;
-            buffer.writeUInt8(consumerIdBuffer.length, offset);
+            writeOnRequest(request, buffer, 'ttl', offset, value_size);
+            offset += value_size.valueOf();
+            buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
-            buffer.writeUInt8(resourceIdBuffer.length, offset);
-            offset += 1;
-            consumerIdBuffer.copy(buffer, offset);
-            offset += consumerIdBuffer.length;
-            resourceIdBuffer.copy(buffer, offset);
+            keyBuffer.copy(buffer, offset);
             return buffer;
         }
 
         case RequestType.Query:
         case RequestType.Purge: {
-            const consumerIdBuffer = Buffer.from(request.consumer_id, 'utf-8');
-            const resourceIdBuffer = Buffer.from(request.resource_id, 'utf-8');
+            const keyBuffer = Buffer.from(request.key, 'utf-8');
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // consumer_id_size
-                1 + // resource_id_size
-                consumerIdBuffer.length +
-                resourceIdBuffer.length
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
             buffer.writeUInt8(request.type, offset);
             offset += 1;
-            buffer.writeUInt8(consumerIdBuffer.length, offset);
+            buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
-            buffer.writeUInt8(resourceIdBuffer.length, offset);
-            offset += 1;
-            consumerIdBuffer.copy(buffer, offset);
-            offset += consumerIdBuffer.length;
-            resourceIdBuffer.copy(buffer, offset);
+            keyBuffer.copy(buffer, offset);
             return buffer;
         }
 
         case RequestType.Update: {
-            const consumerIdBuffer = Buffer.from(request.consumer_id, 'utf-8');
-            const resourceIdBuffer = Buffer.from(request.resource_id, 'utf-8');
+            const keyBuffer = Buffer.from(request.key, 'utf-8');
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // attribute
-                1 + // change
-                8 + // value (little endian)
-                1 + // consumer_id_size
-                1 + // resource_id_size
-                consumerIdBuffer.length +
-                resourceIdBuffer.length
+                    1 + // attribute
+                    1 + // change
+                    value_size.valueOf() + // value (little endian)
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
@@ -110,15 +130,11 @@ export function serializeRequest(request: Request): Buffer {
             offset += 1;
             buffer.writeUInt8(request.change, offset);
             offset += 1;
-            buffer.writeBigUInt64LE(request.value, offset);
-            offset += 8;
-            buffer.writeUInt8(consumerIdBuffer.length, offset);
+            writeOnRequest(request, buffer, 'value', offset, value_size);
+            offset += value_size.valueOf();
+            buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
-            buffer.writeUInt8(resourceIdBuffer.length, offset);
-            offset += 1;
-            consumerIdBuffer.copy(buffer, offset);
-            offset += consumerIdBuffer.length;
-            resourceIdBuffer.copy(buffer, offset);
+            keyBuffer.copy(buffer, offset);
             return buffer;
         }
 
@@ -132,25 +148,37 @@ export function serializeRequest(request: Request): Buffer {
  *
  * @param buffer
  * @param expected
+ * @param value_size
  */
 export function parseResponse(
     buffer: Buffer,
-    expected: 'full' | 'simple'
+    expected: 'full' | 'simple',
+    value_size: ValueSize
 ): FullResponse | SimpleResponse {
     if (expected === 'full') {
-        if (buffer.length !== 18) {
-            throw new Error(`Invalid full response length: ${buffer.length}`);
+        if (buffer.length === 1) {
+            return {
+                success: false,
+                quota: 0,
+                ttl_type: TTLType.Nanoseconds,
+                ttl: 0,
+            };
         }
-        const allowed = buffer.readUInt8(0) === 1;
-        const quota_remaining = buffer.readBigUInt64LE(1);
-        const ttl_type = buffer.readUInt8(9);
-        const ttl_remaining = buffer.readBigInt64LE(10);
+
+        let offset = 0;
+        const success = buffer.readUInt8(offset) === 1;
+        offset += 1;
+        const quota = read(buffer, offset, value_size);
+        offset += value_size.valueOf();
+        const ttl_type = buffer.readUInt8(offset);
+        offset += 1;
+        const ttl = read(buffer, offset, value_size);
 
         return {
-            allowed,
-            quota_remaining,
-            ttl_type,
-            ttl_remaining,
+            success: success,
+            quota: quota,
+            ttl_type: ttl_type,
+            ttl: ttl,
         };
     } else {
         if (buffer.length !== 1) {

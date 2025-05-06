@@ -13,9 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Socket } from "net";
-import { Request, FullResponse, SimpleResponse, QueuedRequest } from "./types";
-import { BuildRequest, ParseResponse, GetExpectedResponseSize, GetExpectedResponseType } from "./protocol";
+import { Socket } from 'net';
+import {
+    Request,
+    FullResponse,
+    SimpleResponse,
+    QueuedRequest,
+    ValueSize,
+} from './types';
+import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 
 /**
  * Connection
@@ -43,6 +49,13 @@ export class Connection {
     private readonly port: number;
 
     /**
+     * Value size
+     *
+     * @private
+     */
+    private readonly value_size: ValueSize;
+
+    /**
      * Queue
      *
      * @private
@@ -50,43 +63,25 @@ export class Connection {
     private readonly queue: QueuedRequest[] = [];
 
     /**
-     * Busy
+     * Buffer
      *
      * @private
      */
-    private busy: boolean = false;
-
-    /**
-     * Current expected size
-     *
-     * @private
-     */
-    private expectedSize: number = 0;
-
-    /**
-     * Current expected type
-     *
-     * @private
-     */
-    private expectedType: 'full' | 'simple' = 'full';
-
-    /**
-     * Current queued request
-     *
-     * @private
-     */
-    private current?: QueuedRequest;
+    private buffer: Buffer = Buffer.alloc(0);
 
     /**
      * Constructor
      *
      * @param host
      * @param port
+     * @param value_size
      */
-    constructor(host: string, port: number) {
+    constructor(host: string, port: number, value_size: ValueSize) {
         this.host = host;
         this.port = port;
+        this.value_size = value_size;
         this.socket = new Socket();
+        this.socket.setNoDelay(true);
     }
 
     /**
@@ -94,17 +89,18 @@ export class Connection {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.socket.connect(this.port, this.host, () => {
-                this.socket.on('data', (chunk) => this.handleData(chunk));
-                this.socket.on('error', (err) => this.handleError(err));
-                resolve();
-            });
-
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
                 reject(err);
             });
             /* c8 ignore stop */
+
+            this.socket.connect(this.port, this.host, () => {
+                this.socket.on('data', chunk => this.onData(chunk));
+                this.socket.on('error', error => this.onError(error));
+
+                resolve();
+            });
         });
     }
 
@@ -114,33 +110,18 @@ export class Connection {
      * @param request
      */
     send(request: Request): Promise<FullResponse | SimpleResponse> {
-        const buffer = BuildRequest(request);
-        const expectedSize = GetExpectedResponseSize(request);
+        const buffer = BuildRequest(request, this.value_size);
         const expectedType = GetExpectedResponseType(request);
 
         return new Promise((resolve, reject) => {
-            this.queue.push({ buffer, resolve, reject, expectedSize, expectedType });
-            this.processQueue();
+            this.queue.push({
+                buffer: buffer,
+                resolve: resolve,
+                reject: reject,
+                expectedType: expectedType,
+            });
+            this.socket.write(buffer);
         });
-    }
-
-    /**
-     * Process queue
-     *
-     * @private
-     */
-    private processQueue() {
-        if (this.busy || this.queue.length === 0) {
-            return;
-        }
-
-        const next = this.queue.shift()!;
-        this.current = next;
-        this.busy = true;
-        this.expectedSize = next.expectedSize;
-        this.expectedType = next.expectedType;
-
-        this.socket.write(next.buffer);
     }
 
     /**
@@ -149,32 +130,101 @@ export class Connection {
      * @param chunk
      * @private
      */
-    private handleData(chunk: Buffer) {
-        if (!this.current) {
-            return;
+    private onData(chunk: Buffer) {
+        setImmediate(() => this.processPendingResponses(chunk));
+    }
+
+    /**
+     * Process pending responses
+     *
+     * @private
+     */
+    private processPendingResponses(chunk: Buffer) {
+        const iterationBuffer = Buffer.concat([this.buffer, chunk]);
+        let offset = 0;
+
+        while (this.queue.length > 0 && offset < iterationBuffer.length) {
+            const current = this.queue[0];
+            const type = current.expectedType;
+            const firstByte = iterationBuffer.readUInt8(offset);
+            offset++;
+
+            const processed = this.tryHandleResponse(type, current, iterationBuffer, firstByte, offset);
+            /* c8 ignore next */
+            if (!processed) break;
+
+            offset = processed.offset;
+            this.queue.shift();
         }
 
-        const chunks: Buffer[] = [];
-        let received = 0;
+        this.buffer = iterationBuffer.subarray(offset);
+    }
 
-        chunks.push(chunk);
-        received += chunk.length;
+    /**
+     * Try handle response
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param firstByte
+     * @param offset
+     * @private
+     */
+    private tryHandleResponse(
+        type: 'simple' | 'full',
+        current: QueuedRequest,
+        buffer: Buffer,
+        firstByte: number,
+        offset: number
+    ): { offset: number } | false {
+        if (type === 'simple') {
+            const slice = buffer.subarray(offset - 1, offset);
+            return this.tryParse(slice, type, current, offset);
+        }
 
-        if (received >= this.expectedSize) {
-            try {
-                const full = Buffer.concat(chunks);
-                const response = ParseResponse(full, this.expectedType);
-                this.current.resolve(response);
-                /* c8 ignore start */
-            } catch (err) {
-                this.current.reject(err);
+        if (type === 'full') {
+            if (firstByte === 0x00) {
+                const slice = buffer.subarray(offset - 1, offset);
+                return this.tryParse(slice, type, current, offset);
             }
-            /* c8 ignore stop */
 
-            this.current = undefined;
-            this.busy = false;
-            this.processQueue();
+            const expectedLength = this.value_size * 2 + 2;
+            /* c8 ignore next */
+            if (buffer.length < offset - 1 + expectedLength) return false;
+
+            const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
+            return this.tryParse(slice, type, current, offset + expectedLength);
+            /* c8 ignore start */
         }
+
+        return false;
+        /* c8 ignore stop */
+    }
+
+    /**
+     * Try parse
+     *
+     * @param slice
+     * @param type
+     * @param current
+     * @param nextOffset
+     * @private
+     */
+    private tryParse(
+        slice: Buffer,
+        type: 'simple' | 'full',
+        current: QueuedRequest,
+        nextOffset: number
+    ): { offset: number } {
+        try {
+            const response = ParseResponse(slice, type, this.value_size);
+            current.resolve(response);
+            /* c8 ignore start */
+        } catch (e) {
+            current.reject(e);
+        }
+        /* c8 ignore stop */
+        return { offset: nextOffset };
     }
 
     /**
@@ -183,21 +233,20 @@ export class Connection {
      * @param error
      * @private
      */
-    private handleError(error: Error) {
-        if (this.current) {
-            this.current.reject(error);
-            this.current = undefined;
+    /* c8 ignore start */
+    private onError(error: Error) {
+        if (this.queue.length > 0) {
+            const current = this.queue.shift()!;
+            current.reject(error);
         }
-
-        this.busy = false;
-        this.processQueue();
     }
+    /* c8 ignore stop */
 
     /**
      * Disconnect
      */
     disconnect() {
-        this.socket.removeAllListeners(); // limpieza total
+        this.socket.removeAllListeners();
         this.socket.end();
     }
 }
