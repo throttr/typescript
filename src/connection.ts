@@ -265,7 +265,7 @@ export class Connection {
                     console.error(`[CI ERROR] full parse error=${(e as Error).message}`);
                     current.reject(e);
                 }
-                offset += expectedLength - 1;
+                offset += expectedLength;
                 this.queue.shift();
                 continue;
             }
