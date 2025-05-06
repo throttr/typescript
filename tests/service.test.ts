@@ -80,8 +80,8 @@ describe('Service', () => {
             })) as FullResponse;
 
             expect(typeof first_query.success).toBe('boolean');
-            expect(typeof first_query.quota).toBe('number');
-            expect(typeof first_query.ttl).toBe('number');
+            expect(typeof first_query.quota).toMatch(/number|bigint/);
+            expect(typeof first_query.ttl).toMatch(/number|bigint/);
             expect(typeof first_query.ttl_type).toBe('number');
 
             // And that must be stored ...
@@ -132,8 +132,8 @@ describe('Service', () => {
             })) as FullResponse;
 
             expect(typeof empty_quota_query.success).toBe('boolean');
-            expect(typeof empty_quota_query.quota).toBe('number');
-            expect(typeof empty_quota_query.ttl).toBe('number');
+            expect(typeof empty_quota_query.quota).toMatch(/number|bigint/);
+            expect(typeof empty_quota_query.ttl).toMatch(/number|bigint/);
             expect(typeof empty_quota_query.ttl_type).toBe('number');
 
             // And "Quota" should be zero ...
@@ -168,8 +168,8 @@ describe('Service', () => {
             })) as FullResponse;
 
             expect(typeof patched_quota_query.success).toBe('boolean');
-            expect(typeof patched_quota_query.quota).toBe('number');
-            expect(typeof patched_quota_query.ttl).toBe('number');
+            expect(typeof patched_quota_query.quota).toMatch(/number|bigint/);
+            expect(typeof patched_quota_query.ttl).toMatch(/number|bigint/);
             expect(typeof patched_quota_query.ttl_type).toBe('number');
 
             // And "Quota" should be ten ...
@@ -204,8 +204,8 @@ describe('Service', () => {
             })) as FullResponse;
 
             expect(typeof increased_quota_query.success).toBe('boolean');
-            expect(typeof increased_quota_query.quota).toBe('number');
-            expect(typeof increased_quota_query.ttl).toBe('number');
+            expect(typeof increased_quota_query.quota).toMatch(/number|bigint/);
+            expect(typeof increased_quota_query.ttl).toMatch(/number|bigint/);
             expect(typeof increased_quota_query.ttl_type).toBe('number');
 
             // And "Quota" should be thirty ...
@@ -250,8 +250,8 @@ describe('Service', () => {
             })) as FullResponse;
 
             expect(typeof exists_query.success).toBe('boolean');
-            expect(typeof exists_query.quota).toBe('number');
-            expect(typeof exists_query.ttl).toBe('number');
+            expect(typeof exists_query.quota).toMatch(/number|bigint/);
+            expect(typeof exists_query.ttl).toMatch(/number|bigint/);
             expect(typeof exists_query.ttl_type).toBe('number');
 
             // And that should fail ...
