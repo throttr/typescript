@@ -113,7 +113,7 @@ export class Connection {
                 reject: reject,
                 expectedType: expectedType,
             });
-            this.socket.write(buffer);
+            setImmediate(() => this.socket.write(buffer));
         });
     }
 
