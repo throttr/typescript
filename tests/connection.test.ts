@@ -43,7 +43,7 @@ describe('Connection', () => {
 
     it('should handle data without current request', () => {
         expect(() => {
-            connection['handleData'](Buffer.from([0x00]));
+            connection['onData'](Buffer.from([0x00]));
         }).not.toThrow();
     });
 
