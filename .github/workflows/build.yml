@@ -51,13 +51,13 @@ jobs:
                 THROTTR_SIZE: ${{ matrix.size }}
 
             - name: Upload coverage reports to Codecov
-              if: ${{ matrix.value_size == 'uint16' }}
+              if: ${{ matrix.size == 'uint16' }}
               uses: codecov/codecov-action@v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
 
             - name: Publish
-              if: ${{ github.ref_type == 'tag' && matrix.value_size == 'uint16' }}
+              if: ${{ github.ref_type == 'tag' && matrix.size == 'uint16' }}
               run: |
                   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
                   npm publish --access public
