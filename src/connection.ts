@@ -93,6 +93,7 @@ export class Connection {
             /* c8 ignore stop */
 
             this.socket.connect(this.port, this.host, () => {
+                resolve();
             });
         });
     }
