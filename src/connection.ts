@@ -64,6 +64,15 @@ export class Connection {
     private readBuffer: Buffer = Buffer.alloc(0);
 
     /**
+     * Buffer
+     *
+     * @private
+     */
+    private buffer: Buffer = Buffer.alloc(0);
+
+    private parsing = false;
+
+    /**
      * Constructor
      *
      * @param host
@@ -123,10 +132,7 @@ export class Connection {
      * @private
      */
     private handleData(chunk: Buffer) {
-        console.log(`[CI DEBUG] buffer=${chunk.toString('hex')}, queue=${this.queue.length}`);
-        console.log(`[CI DEBUG] readBuffer=${this.readBuffer.toString('hex')}, queue=${this.queue.length}`);
-        this.readBuffer = Buffer.concat([this.readBuffer, chunk]);
-        setImmediate(() => this.processPendingResponses());
+        setImmediate(() => this.processPendingResponses(chunk));
     }
 
     /**
@@ -134,47 +140,49 @@ export class Connection {
      *
      * @private
      */
-    private processPendingResponses() {
+    private processPendingResponses(chunk: Buffer) {
+        const iterationBuffer = Buffer.concat([this.buffer, chunk]);
+
+        let offset = 0;
+
         while (this.queue.length > 0) {
             const current = this.queue[0];
             const type = current.expectedType;
 
-            if (this.readBuffer.length < 1) break;
+            if (iterationBuffer.length <= offset) break;
 
-            const firstByte = this.readBuffer.readUInt8(0);
+            const firstByte = iterationBuffer.readUInt8(offset);
+            offset++;
 
-            let totalSize = 1;
+            if (type === "simple") {
+                const slice = iterationBuffer.subarray(offset - 1, offset);
+                current.resolve(ParseResponse(slice, type, this.value_size));
+                this.queue.shift();
+                continue;
+            }
 
             if (type === "full") {
                 if (firstByte === 0x00) {
-                    totalSize = 1;
-                } else if (firstByte === 0x01) {
-                    totalSize = 1 + (this.value_size.valueOf() * 2) + 1;
-                } else {
-                    // byte inválido, espera más datos
-                    break;
+                    const slice = iterationBuffer.subarray(offset - 1, offset);
+                    current.resolve(ParseResponse(slice, type, this.value_size));
+                    this.queue.shift();
+                    continue;
                 }
+
+                const expectedLength = 1 + (this.value_size * 2) + 1; // header + 2 fields + status
+                if (iterationBuffer.length < (offset - 1 + expectedLength)) break;
+
+                const slice = iterationBuffer.subarray(offset - 1, offset - 1 + expectedLength);
+                current.resolve(ParseResponse(slice, type, this.value_size));
+                offset += expectedLength - 1;
+                this.queue.shift();
+                continue;
             }
 
-            if (this.readBuffer.length < totalSize) {
-                console.log(`[CI DEBUG] not enough data yet: have=${this.readBuffer.length}, need=${totalSize}`);
-                break;
-            }
-
-            const responseBuffer = this.readBuffer.subarray(0, totalSize);
-            this.readBuffer = this.readBuffer.subarray(totalSize);
-
-            try {
-                console.error(`[CI ERROR] queue[0]=${JSON.stringify(current)} buffer=${this.readBuffer.toString('hex')}`);
-                const response = ParseResponse(responseBuffer, current.expectedType, this.value_size);
-                current.resolve(response);
-            } catch (err) {
-                current.reject(err);
-                console.error(`[CI ERROR] Failed to parse response: ${err}, buffer=${responseBuffer.toString('hex')}`);
-            }
-            console.log(`[CI DEBUG] parsing ${current.expectedType}, current buffer size=${this.readBuffer.length}`);
-            this.queue.shift();
+            break;
         }
+
+        this.buffer = iterationBuffer.subarray(offset);
     }
 
     /**
