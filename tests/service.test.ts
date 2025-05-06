@@ -62,10 +62,10 @@ describe('Service', () => {
 
         // After that, we are going to make a QUERY to see what was stored ...
 
-        const first_query = (await service.send({
+        const first_query = await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        }) as FullResponse;
 
         expect(typeof first_query.success).toBe('boolean');
         expect(typeof first_query.quota).toBe('number');
