@@ -120,7 +120,7 @@ export class Connection {
             });
             console.log("Request:", request);
             setImmediate(() => {
-
+                console.log("We write: ", buffer.toString('hex'))
                 const response = this.socket.write(buffer)
                 console.log("Write response:", response);
             });
