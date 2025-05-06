@@ -41,19 +41,24 @@ npm install @throttr/sdk
 ## Basic Usage
 
 ```typescript
-import { Service, RequestType, TTLType, AttributeType, ChangeType } from '@throttr/sdk';
+import { 
+    Service,
+    RequestType,
+    TTLType,
+    AttributeType,
+    ChangeType,
+    ValueSize
+} from '@throttr/sdk';
 
 const service = new Service({
     host: '127.0.0.1',
     port: 9000,
     max_connections: 4, // Optional: configure concurrent connections
+    value_type: ValueSize.UInt16,
 });
 
-// Define a consumer (example: IP + port, UUID, or custom identifier)
-const consumerId = '127.0.0.1:1234';
-
-// Define a resource (example: METHOD + URL, or any identifier)
-const resourceId = 'GET /api/resource';
+// Define a key (example: IP + port + path, UUID, or custom identifier)
+const key = '127.0.0.1:1234/api/resource';
 
 // Connect to Throttr
 await service.connect();
@@ -61,46 +66,37 @@ await service.connect();
 // Insert quota for a consumer-resource pair
 const insert_response = await service.send({
     type: RequestType.Insert,
-    consumer_id: consumerId,
-    resource_id: resourceId,
-    quota: BigInt(5),
-    usage: BigInt(0),
-    ttl_type: TTLType.Milliseconds,
-    ttl: BigInt(3000), // 3 seconds
+    key: key,
+    quota: 5,
+    ttl_type: TTLType.Seconds,
+    ttl: 60,
 });
 
-console.log('Allowed:', insert_response.allowed);
-console.log('Remaining:', insert_response.quota_remaining);
-console.log('TTL Type:', insert_response.ttl_type);
-console.log('TTL:', insert_response.ttl_remaining);
+console.log('Success:', insert_response.success);
 
 // Update the available quota
 await service.send({
     type: RequestType.Update,
     attribute: AttributeType.Quota,
     change: ChangeType.Decrease,
-    value: BigInt(1),
-    consumer_id: consumerId,
-    resource_id: resourceId,
+    value: 1,
 });
 
 // Query the available quota
 const query_response = await service.send({
     type: RequestType.Query,
-    consumer_id: consumerId,
-    resource_id: resourceId,
+    key: key,
 });
 
-console.log('Allowed:', query_response.allowed);
-console.log('Remaining:', query_response.quota_remaining);
+console.log('Success:', query_response.success);
+console.log('Quota:', query_response.quota);
 console.log('TTL Type:', query_response.ttl_type);
-console.log('TTL:', query_response.ttl_remaining);
+console.log('TTL:', query_response.ttl);
 
 // Optionally, purge the quota
 await service.send({
     type: RequestType.Purge,
-    consumer_id: consumerId,
-    resource_id: resourceId,
+    key: key,
 });
 
 // Disconnect once done
@@ -113,7 +109,7 @@ See more examples in [tests](./tests/service.test.ts).
 
 - The protocol assumes Little Endian architecture.
 - The internal message queue ensures requests are processed sequentially.
-- The package is defined to works with protocol 2.0.0 or greatest.
+- The package is defined to works with protocol 4.0.1 or greatest.
 
 ---
 
