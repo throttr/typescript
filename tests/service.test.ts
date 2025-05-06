@@ -55,15 +55,16 @@ describe('Service', () => {
     it('it should be compatible with throttr server',
         async () => {
             const key = '333333';
+            const isBigInt = process.env.VALUE_SIZE === 'uint64';
 
             // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
 
             const insert = (await service.send({
                 type: RequestType.Insert,
                 key: key,
-                quota: 7,
+                quota: isBigInt ? BigInt(7) : 7,
                 ttl_type: TTLType.Seconds,
-                ttl: 60,
+                ttl: isBigInt ? BigInt(60) : 60,
             })) as SimpleResponse;
 
             expect(typeof insert.success).toBe('boolean');
@@ -87,10 +88,10 @@ describe('Service', () => {
             // And that must be stored ...
 
             expect(first_query.success).toBe(true);
-            expect(first_query.quota).toBe(7);
+            expect(first_query.quota).toBe(isBigInt ? BigInt(7) : 7);
             expect(first_query.ttl_type).toBe(TTLType.Seconds);
-            expect(first_query.ttl).toBeGreaterThan(0);
-            expect(first_query.ttl).toBeLessThan(60);
+            expect(first_query.ttl).toBeGreaterThan(isBigInt ? BigInt(0) : 0);
+            expect(first_query.ttl).toBeLessThan(isBigInt ? BigInt(60) : 60);
 
             // Right now we will UPDATE the quota to zero using "decrease" operation ...
 
@@ -99,7 +100,7 @@ describe('Service', () => {
                 key: key,
                 attribute: AttributeType.Quota,
                 change: ChangeType.Decrease,
-                value: 7,
+                value: isBigInt ? BigInt(7) : 7,
             })) as SimpleResponse;
 
             expect(typeof success_decrease_update.success).toBe('boolean');
@@ -115,7 +116,7 @@ describe('Service', () => {
                 key: key,
                 attribute: AttributeType.Quota,
                 change: ChangeType.Decrease,
-                value: 7,
+                value: isBigInt ? BigInt(7) : 7,
             })) as SimpleResponse;
 
             expect(typeof failed_decrease_update.success).toBe('boolean');
@@ -139,10 +140,10 @@ describe('Service', () => {
             // And "Quota" should be zero ...
 
             expect(empty_quota_query.success).toBe(true);
-            expect(empty_quota_query.quota).toBe(0);
+            expect(empty_quota_query.quota).toBe(isBigInt ? BigInt(0) : 0);
             expect(empty_quota_query.ttl_type).toBe(TTLType.Seconds);
-            expect(empty_quota_query.ttl).toBeGreaterThan(0);
-            expect(empty_quota_query.ttl).toBeLessThan(60);
+            expect(empty_quota_query.ttl).toBeGreaterThan(isBigInt ? BigInt(0) : 0);
+            expect(empty_quota_query.ttl).toBeLessThan(isBigInt ? BigInt(60) : 60);
 
             // After that we're going to UPDATE to "patch" the "Quota" to 10 ...
 
@@ -151,7 +152,7 @@ describe('Service', () => {
                 key: key,
                 attribute: AttributeType.Quota,
                 change: ChangeType.Patch,
-                value: 10,
+                value: isBigInt ? BigInt(10) : 10,
             })) as SimpleResponse;
 
             expect(typeof success_patch_update.success).toBe('boolean');
@@ -175,10 +176,10 @@ describe('Service', () => {
             // And "Quota" should be ten ...
 
             expect(patched_quota_query.success).toBe(true);
-            expect(patched_quota_query.quota).toBe(10);
+            expect(patched_quota_query.quota).toBe(isBigInt ? BigInt(10) : 10);
             expect(patched_quota_query.ttl_type).toBe(TTLType.Seconds);
-            expect(patched_quota_query.ttl).toBeGreaterThan(0);
-            expect(patched_quota_query.ttl).toBeLessThan(60);
+            expect(patched_quota_query.ttl).toBeGreaterThan(isBigInt ? BigInt(0) : 0);
+            expect(patched_quota_query.ttl).toBeLessThan(isBigInt ? BigInt(60) : 60);
 
             // After that we're going to UPDATE to "increase" the "Quota" by 20 ...
 
@@ -187,7 +188,7 @@ describe('Service', () => {
                 key: key,
                 attribute: AttributeType.Quota,
                 change: ChangeType.Increase,
-                value: 20,
+                value: isBigInt ? BigInt(20) : 20,
             })) as SimpleResponse;
 
             expect(typeof success_increase_update.success).toBe('boolean');
@@ -211,10 +212,10 @@ describe('Service', () => {
             // And "Quota" should be thirty ...
 
             expect(increased_quota_query.success).toBe(true);
-            expect(increased_quota_query.quota).toBe(30);
+            expect(increased_quota_query.quota).toBe(isBigInt ? BigInt(30) : 30);
             expect(increased_quota_query.ttl_type).toBe(TTLType.Seconds);
-            expect(increased_quota_query.ttl).toBeGreaterThan(0);
-            expect(increased_quota_query.ttl).toBeLessThan(60);
+            expect(increased_quota_query.ttl).toBeGreaterThan(isBigInt ? BigInt(0) : 0);
+            expect(increased_quota_query.ttl).toBeLessThan(isBigInt ? BigInt(60) : 60);
 
             // After that we're going to purge the key ...
 
