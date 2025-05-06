@@ -29,10 +29,21 @@ describe('Service', () => {
     let service: Service;
 
     beforeAll(async () => {
+        const size = process.env.THROTTR_SIZE || 'uint16';
+
+        const value_size: ValueSize = {
+            uint8: ValueSize.UInt8,
+            uint16: ValueSize.UInt16,
+            uint32: ValueSize.UInt32,
+            uint64: ValueSize.UInt64,
+        }[size] as ValueSize;
+
+        console.log(value_size);
+
         service = new Service({
             host: '127.0.0.1',
             port: 9000,
-            value_size: ValueSize.UInt16,
+            value_size: value_size,
         });
         await service.connect();
     });
@@ -41,8 +52,7 @@ describe('Service', () => {
         service.disconnect();
     });
 
-    it(
-        'it should be compatible with throttr server',
+    it('it should be compatible with throttr server',
         async () => {
             const key = '333333';
 
