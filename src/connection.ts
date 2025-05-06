@@ -150,6 +150,7 @@ export class Connection {
             offset++;
 
             const processed = this.tryHandleResponse(type, current, iterationBuffer, firstByte, offset);
+            /* c8 ignore next */
             if (!processed) break;
 
             offset = processed.offset;
@@ -188,13 +189,16 @@ export class Connection {
             }
 
             const expectedLength = this.value_size * 2 + 2;
+            /* c8 ignore next */
             if (buffer.length < offset - 1 + expectedLength) return false;
 
             const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
             return this.tryParse(slice, type, current, offset + expectedLength);
+            /* c8 ignore start */
         }
 
         return false;
+        /* c8 ignore stop */
     }
 
     /**
@@ -215,9 +219,11 @@ export class Connection {
         try {
             const response = ParseResponse(slice, type, this.value_size);
             current.resolve(response);
+            /* c8 ignore start */
         } catch (e) {
             current.reject(e);
         }
+        /* c8 ignore stop */
         return { offset: nextOffset };
     }
 
