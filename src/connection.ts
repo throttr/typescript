@@ -63,6 +63,9 @@ export class Connection {
      */
     private buffer: Buffer = Buffer.alloc(0);
 
+    private pendingChunks: Buffer[] = [];
+    private processing = false;
+
     /**
      * Constructor
      *
@@ -129,7 +132,20 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
-        setImmediate(() => this.processPendingResponses(chunk));
+        this.pendingChunks.push(chunk);
+        this.tryProcess();
+    }
+
+    private tryProcess() {
+        if (this.processing) return;
+        this.processing = true;
+
+        while (this.pendingChunks.length > 0) {
+            const chunk = this.pendingChunks.shift()!;
+            this.processPendingResponses(chunk);
+        }
+
+        this.processing = false;
     }
 
     /**
