@@ -133,6 +133,7 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
+        console.log("Received: ", chunk);
         this.pendingChunks.push(chunk);
         this.tryProcess();
     }
