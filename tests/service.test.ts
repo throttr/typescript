@@ -29,7 +29,7 @@ describe('Service', () => {
     let service: Service;
 
     beforeAll(async () => {
-        const size = process.env.THROTTR_SIZE || 'uint16';
+        const size = process.env.THROTTR_SIZE ?? 'uint16';
 
         const value_size: ValueSize = {
             uint8: ValueSize.UInt8,
