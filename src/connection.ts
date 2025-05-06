@@ -67,6 +67,12 @@ export class Connection {
     private processing = false;
 
     /**
+     * Bytes vistos por nosotros
+     */
+    private bytesSeen: number = 0;
+
+
+    /**
      * Constructor
      *
      * @param host
@@ -133,8 +139,25 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
-        console.log("Received: ", chunk);
-        this.pendingChunks.push(chunk);
+        const totalRead = this.socket.bytesRead;
+        const expectedChunkLength = totalRead - this.bytesSeen;
+
+        if (expectedChunkLength < 0) {
+            console.warn(`[CI WARN] Detected bytesRead rollback or inconsistency. Resetting counters.`);
+            this.bytesSeen = totalRead;
+            return;
+        }
+
+        let effectiveChunk = chunk;
+        if (chunk.length > expectedChunkLength) {
+            console.warn(`[CI WARN] Chunk larger than expected. Trimming to ${expectedChunkLength} bytes`);
+            effectiveChunk = chunk.subarray(0, expectedChunkLength);
+        }
+
+        this.bytesSeen += effectiveChunk.length;
+
+        console.log("Received (sanitized):", effectiveChunk);
+        this.pendingChunks.push(effectiveChunk);
         this.tryProcess();
     }
 
