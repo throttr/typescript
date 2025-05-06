@@ -84,6 +84,7 @@ export class Connection {
         this.port = port;
         this.value_size = value_size;
         this.socket = new Socket();
+        this.socket.setNoDelay(true);
     }
 
     /**
@@ -93,6 +94,9 @@ export class Connection {
         return new Promise((resolve, reject) => {
             this.socket.on('data', (chunk) => this.onData(chunk));
             this.socket.on('error', (error) => this.onError(error));
+            this.socket.on('drain', () => {
+                console.log("Socket write drained");
+            })
 
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
