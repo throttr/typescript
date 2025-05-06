@@ -14,7 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import { Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize } from './types';
+import {Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize, RequestType} from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 
 /**
@@ -119,6 +119,7 @@ export class Connection {
                 expectedType: expectedType,
             });
             console.log("Request:", request);
+            console.log("Request Type:", RequestType[request.type]);
             setImmediate(() => {
                 console.log("We write: ", buffer.toString('hex'))
                 const response = this.socket.write(buffer)
