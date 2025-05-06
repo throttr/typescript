@@ -123,6 +123,8 @@ export class Connection {
      * @private
      */
     private handleData(chunk: Buffer) {
+        console.log(`[CI DEBUG] buffer=${chunk.toString('hex')}, queue=${this.queue.length}`);
+        console.log(`[CI DEBUG] readBuffer=${this.readBuffer.toString('hex')}, queue=${this.queue.length}`);
         this.readBuffer = Buffer.concat([this.readBuffer, chunk]);
         this.processPendingResponses();
     }
@@ -137,7 +139,7 @@ export class Connection {
             const current = this.queue[0];
             const type = current.expectedType;
 
-            if (this.readBuffer.length < 1) return;
+            if (this.readBuffer.length < 1) break;
 
             const firstByte = this.readBuffer.readUInt8(0);
 
@@ -150,11 +152,14 @@ export class Connection {
                     totalSize = 1 + (this.value_size.valueOf() * 2) + 1;
                 } else {
                     // byte inválido, espera más datos
-                    return;
+                    break;
                 }
             }
 
-            if (this.readBuffer.length < totalSize) return;
+            if (this.readBuffer.length < totalSize) {
+                console.log(`[CI DEBUG] not enough data yet: have=${this.readBuffer.length}, need=${totalSize}`);
+                break;
+            }
 
             const responseBuffer = this.readBuffer.subarray(0, totalSize);
             this.readBuffer = this.readBuffer.subarray(totalSize);
@@ -165,7 +170,7 @@ export class Connection {
             } catch (err) {
                 current.reject(err);
             }
-
+            console.log(`[CI DEBUG] parsing ${current.expectedType}, current buffer size=${this.readBuffer.length}`);
             this.queue.shift();
         }
     }
@@ -178,6 +183,7 @@ export class Connection {
      */
     private handleError(error: Error) {
         if (this.queue.length > 0) {
+            console.log(`[CI DEBUG] on error=${error.message} current buffer size=${this.readBuffer.length}`);
             const current = this.queue.shift()!;
             current.reject(error);
         }
