@@ -96,6 +96,7 @@ export class Connection {
             /* c8 ignore stop */
 
             this.socket.connect(this.port, this.host, () => {
+                this.socket.setNoDelay(true);
                 resolve();
             });
         });
