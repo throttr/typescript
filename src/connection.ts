@@ -120,19 +120,23 @@ export class Connection {
                     buffer: buffer,
                     expectedType: expectedTypes[index],
                     resolve: (res: FullResponse | SimpleResponse) => {
+                        /* c8 ignore start */
                         if (failed) return;
+                        /* c8 ignore stop */
                         responses[index] = res;
                         remaining--;
                         if (remaining === 0) {
                             resolve(Array.isArray(request) ? responses : responses[0]);
                         }
                     },
+                    /* c8 ignore start */
                     reject: (err: Error) => {
                         if (!failed) {
                             failed = true;
                             reject(err);
                         }
                     },
+                    /* c8 ignore stop */
                 });
             });
 

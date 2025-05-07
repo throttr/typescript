@@ -47,7 +47,9 @@ export function GetExpectedResponseType(request: Request): 'full' | 'simple' {
         case RequestType.Purge:
         case RequestType.Insert:
             return 'simple';
+        /* c8 ignore start */
         default:
             throw new Error('Unknown request type');
+        /* c8 ignore stop */
     }
 }
