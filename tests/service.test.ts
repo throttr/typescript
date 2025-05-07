@@ -197,22 +197,6 @@ describe('Service', () => {
 
         expect(success_increase_update.success).toBe(true);
 
-        // After that we're going to UPDATE to "increase" the "TTL" by 60 ...
-
-        const success_increase_ttl = (await service.send({
-            type: RequestType.Update,
-            key: key,
-            attribute: AttributeType.TTL,
-            change: ChangeType.Increase,
-            value: flexNumber(isBigInt, 60),
-        })) as SimpleResponse;
-
-        expect(typeof success_increase_ttl.success).toBe('boolean');
-
-        // And that should be fine ...
-
-        expect(success_increase_ttl.success).toBe(true);
-
         // After that we're going to query to see how much "Quota" we have ...
 
         const increased_quota_query = (await service.send({
@@ -232,6 +216,42 @@ describe('Service', () => {
         expect(increased_quota_query.ttl_type).toBe(TTLType.Seconds);
         expect(increased_quota_query.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
         expect(increased_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
+
+        // After that we're going to UPDATE to "increase" the "TTL" by 60 ...
+
+        const success_increase_ttl = (await service.send({
+            type: RequestType.Update,
+            key: key,
+            attribute: AttributeType.TTL,
+            change: ChangeType.Increase,
+            value: flexNumber(isBigInt, 60),
+        })) as SimpleResponse;
+
+        expect(typeof success_increase_ttl.success).toBe('boolean');
+
+        // And that should be fine ...
+
+        expect(success_increase_ttl.success).toBe(true);
+
+        // After that we're going to query to see how much "TTL" we have ...
+
+        const increased_ttl_query = (await service.send({
+            type: RequestType.Query,
+            key: key,
+        })) as FullResponse;
+
+        expect(typeof increased_ttl_query.success).toBe('boolean');
+        expect(typeof increased_ttl_query.quota).toMatch(/number|bigint/);
+        expect(typeof increased_ttl_query.ttl).toMatch(/number|bigint/);
+        expect(typeof increased_ttl_query.ttl_type).toBe('number');
+
+        // And "TTL" should be less than one hundred twenty and more than sixty ...
+
+        expect(increased_ttl_query.success).toBe(true);
+        expect(increased_ttl_query.quota).toBe(flexNumber(isBigInt, 30));
+        expect(increased_ttl_query.ttl_type).toBe(TTLType.Seconds);
+        expect(increased_ttl_query.ttl).toBeGreaterThan(flexNumber(isBigInt, 60));
+        expect(increased_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 120));
 
         // After that we're going to purge the key ...
 
