@@ -253,6 +253,42 @@ describe('Service', () => {
         expect(increased_ttl_query.ttl).toBeGreaterThan(flexNumber(isBigInt, 60));
         expect(increased_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 120));
 
+        // After that we're going to UPDATE to "decrease" the "TTL" by 60 ...
+
+        const success_decrease_ttl = (await service.send({
+            type: RequestType.Update,
+            key: key,
+            attribute: AttributeType.TTL,
+            change: ChangeType.Decrease,
+            value: flexNumber(isBigInt, 60),
+        })) as SimpleResponse;
+
+        expect(typeof success_decrease_ttl.success).toBe('boolean');
+
+        // And that should be fine ...
+
+        expect(success_decrease_ttl.success).toBe(true);
+
+        // After that we're going to query to see how much "TTL" we have ...
+
+        const decrease_ttl_query = (await service.send({
+            type: RequestType.Query,
+            key: key,
+        })) as FullResponse;
+
+        expect(typeof decrease_ttl_query.success).toBe('boolean');
+        expect(typeof decrease_ttl_query.quota).toMatch(/number|bigint/);
+        expect(typeof decrease_ttl_query.ttl).toMatch(/number|bigint/);
+        expect(typeof decrease_ttl_query.ttl_type).toBe('number');
+
+        // And "TTL" should be less than sixty ...
+
+        expect(decrease_ttl_query.success).toBe(true);
+        expect(decrease_ttl_query.quota).toBe(flexNumber(isBigInt, 30));
+        expect(decrease_ttl_query.ttl_type).toBe(TTLType.Seconds);
+        expect(decrease_ttl_query.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
+        expect(decrease_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
+
         // After that we're going to purge the key ...
 
         const success_purge = (await service.send({
