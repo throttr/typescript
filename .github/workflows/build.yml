@@ -7,8 +7,8 @@ jobs:
         runs-on: ubuntu-latest
 
         strategy:
-          matrix:
-            size: [ uint8, uint16, uint32, uint64 ]
+            matrix:
+                size: [uint8, uint16, uint32, uint64]
 
         services:
             throttr:
@@ -48,7 +48,7 @@ jobs:
                   nc -z localhost 9000 || (echo "❌ throttr isn't running on port 9000" && exit 1)
                   yarn test:coverage
               env:
-                THROTTR_SIZE: ${{ matrix.size }}
+                  THROTTR_SIZE: ${{ matrix.size }}
 
             - name: Upload coverage reports to Codecov
               if: ${{ matrix.size == 'uint16' }}
