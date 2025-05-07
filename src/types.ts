@@ -38,17 +38,53 @@ export interface Configuration {
     max_connections?: number;
 }
 
+/**
+ * Request type
+ */
 export enum RequestType {
+    /**
+     * Insert
+     */
     Insert = 0x01,
+
+    /**
+     * Query
+     */
     Query = 0x02,
+
+    /**
+     * Update
+     */
     Update = 0x03,
+
+    /**
+     * Purge
+     */
     Purge = 0x04,
 }
 
+/**
+ * Value size
+ */
 export enum ValueSize {
+    /**
+     * uint8
+     */
     UInt8 = 0x01,
+
+    /**
+     * uint16
+     */
     UInt16 = 0x02,
+
+    /**
+     * uint32
+     */
     UInt32 = 0x04,
+
+    /**
+     * uint64
+     */
     UInt64 = 0x08,
 }
 
@@ -56,11 +92,34 @@ export enum ValueSize {
  * TTL types
  */
 export enum TTLType {
+    /**
+     * Nanoseconds
+     */
     Nanoseconds = 0x01,
+
+    /**
+     * Microseconds
+     */
     Microseconds = 0x02,
+
+    /**
+     * Milliseconds
+     */
     Milliseconds = 0x03,
+
+    /**
+     * Seconds
+     */
     Seconds = 0x04,
+
+    /**
+     * Minutes
+     */
     Minutes = 0x05,
+
+    /**
+     * Hours
+     */
     Hours = 0x06,
 }
 
@@ -68,7 +127,14 @@ export enum TTLType {
  * Attributes types
  */
 export enum AttributeType {
+    /**
+     * Quota
+     */
     Quota = 0,
+
+    /**
+     * TTL
+     */
     TTL = 1,
 }
 
@@ -76,8 +142,19 @@ export enum AttributeType {
  * Change types
  */
 export enum ChangeType {
+    /**
+     * Patch
+     */
     Patch = 0,
+
+    /**
+     * Increase
+     */
     Increase = 1,
+
+    /**
+     * Decrease
+     */
     Decrease = 2,
 }
 
@@ -85,10 +162,29 @@ export enum ChangeType {
  * Insert request
  */
 export interface InsertRequest {
+    /**
+     * Type
+     */
     type: RequestType.Insert;
+
+    /**
+     * Quota
+     */
     quota: number | bigint;
+
+    /**
+     * TTL type
+     */
     ttl_type: TTLType;
+
+    /**
+     * TTL
+     */
     ttl: number | bigint;
+
+    /**
+     * Key
+     */
     key: string;
 }
 
@@ -96,7 +192,14 @@ export interface InsertRequest {
  * Query request
  */
 export interface QueryRequest {
+    /**
+     * Type
+     */
     type: RequestType.Query;
+
+    /**
+     * Key
+     */
     key: string;
 }
 
@@ -104,7 +207,14 @@ export interface QueryRequest {
  * Purge request
  */
 export interface PurgeRequest {
+    /**
+     * Type
+     */
     type: RequestType.Purge;
+
+    /**
+     * Key
+     */
     key: string;
 }
 
@@ -112,10 +222,29 @@ export interface PurgeRequest {
  * Update request
  */
 export interface UpdateRequest {
+    /**
+     * Type
+     */
     type: RequestType.Update;
+
+    /**
+     * Attribute
+     */
     attribute: AttributeType;
+
+    /**
+     * Change
+     */
     change: ChangeType;
+
+    /**
+     * Value
+     */
     value: number | bigint;
+
+    /**
+     * Value
+     */
     key: string;
 }
 
