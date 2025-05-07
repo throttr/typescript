@@ -16,6 +16,15 @@
 import { FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize } from './types';
 
 /* c8 ignore start */
+/**
+ * Write on request
+ *
+ * @param request
+ * @param buffer
+ * @param attribute
+ * @param offset
+ * @param value_size
+ */
 function writeOnRequest(
     request: Request,
     buffer: Buffer,
@@ -43,6 +52,13 @@ function writeOnRequest(
     }
 }
 
+/**
+ * Read
+ *
+ * @param buffer
+ * @param offset
+ * @param value_size
+ */
 function read(buffer: Buffer, offset: number, value_size: ValueSize) {
     switch (value_size) {
         case ValueSize.UInt64:
