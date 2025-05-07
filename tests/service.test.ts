@@ -289,6 +289,42 @@ describe('Service', () => {
         expect(decrease_ttl_query.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
         expect(decrease_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
+        // After that we're going to UPDATE to "patch" the "TTL" to 90 ...
+
+        const success_patch_ttl = (await service.send({
+            type: RequestType.Update,
+            key: key,
+            attribute: AttributeType.TTL,
+            change: ChangeType.Patch,
+            value: flexNumber(isBigInt, 90),
+        })) as SimpleResponse;
+
+        expect(typeof success_patch_ttl.success).toBe('boolean');
+
+        // And that should be fine ...
+
+        expect(success_patch_ttl.success).toBe(true);
+
+        // After that we're going to query to see how much "TTL" we have ...
+
+        const patch_ttl_query = (await service.send({
+            type: RequestType.Query,
+            key: key,
+        })) as FullResponse;
+
+        expect(typeof patch_ttl_query.success).toBe('boolean');
+        expect(typeof patch_ttl_query.quota).toMatch(/number|bigint/);
+        expect(typeof patch_ttl_query.ttl).toMatch(/number|bigint/);
+        expect(typeof patch_ttl_query.ttl_type).toBe('number');
+
+        // And "TTL" should be less than ninety ...
+
+        expect(patch_ttl_query.success).toBe(true);
+        expect(patch_ttl_query.quota).toBe(flexNumber(isBigInt, 30));
+        expect(patch_ttl_query.ttl_type).toBe(TTLType.Seconds);
+        expect(patch_ttl_query.ttl).toBeGreaterThan(flexNumber(isBigInt, 60));
+        expect(patch_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 90));
+
         // After that we're going to purge the key ...
 
         const success_purge = (await service.send({
@@ -360,7 +396,6 @@ describe('Service', () => {
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);
-
 
         const [query1, query2] = await service.send([
             {
