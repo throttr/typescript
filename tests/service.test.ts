@@ -23,7 +23,7 @@ import {
     TTLType,
     ValueSize,
 } from '../src';
-import {expect} from 'vitest';
+import { expect } from 'vitest';
 
 describe('Service', () => {
     let service: Service;
@@ -50,7 +50,7 @@ describe('Service', () => {
         service.disconnect();
     });
 
-    const flexNumber = (bigInt: boolean, number: number) => bigInt ? BigInt(number) : number; // NOSONAR
+    const flexNumber = (bigInt: boolean, number: number) => (bigInt ? BigInt(number) : number); // NOSONAR
 
     it('it should be compatible with throttr server', async () => {
         const key = '333333';
@@ -368,7 +368,6 @@ describe('Service', () => {
         expect(exists_query.success).toBe(false);
     });
 
-
     it('should insert and query multiple keys in a single batch write', async () => {
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
 
@@ -377,7 +376,7 @@ describe('Service', () => {
         const key1 = 'batch-key-1';
         const key2 = 'batch-key-2';
 
-        const [res1, res2] = await service.send([
+        const [res1, res2] = (await service.send([
             {
                 type: RequestType.Insert,
                 key: key1,
@@ -392,12 +391,12 @@ describe('Service', () => {
                 ttl_type: TTLType.Seconds,
                 ttl: flexNumber(isBigInt, 30),
             },
-        ]) as SimpleResponse[];
+        ])) as SimpleResponse[];
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);
 
-        const [query1, query2] = await service.send([
+        const [query1, query2] = (await service.send([
             {
                 type: RequestType.Query,
                 key: key1,
@@ -406,7 +405,7 @@ describe('Service', () => {
                 type: RequestType.Query,
                 key: key2,
             },
-        ]) as FullResponse[];
+        ])) as FullResponse[];
 
         expect(query1.success).toBe(true);
         expect(query1.quota).toBe(flexNumber(isBigInt, 7));

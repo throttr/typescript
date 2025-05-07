@@ -14,13 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import {
-    Request,
-    FullResponse,
-    SimpleResponse,
-    QueuedRequest,
-    ValueSize,
-} from './types';
+import { Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize } from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 
 /**
@@ -109,7 +103,9 @@ export class Connection {
      *
      * @param request
      */
-    send(request: Request | Request[]): Promise<FullResponse | SimpleResponse | (FullResponse | SimpleResponse)[]> {
+    send(
+        request: Request | Request[]
+    ): Promise<FullResponse | SimpleResponse | (FullResponse | SimpleResponse)[]> {
         const requests = Array.isArray(request) ? request : [request];
         const buffers = requests.map(req => BuildRequest(req, this.value_size));
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
@@ -131,16 +127,16 @@ export class Connection {
                             resolve(Array.isArray(request) ? responses : responses[0]);
                         }
                     },
-                    reject: (err: any) => {
+                    reject: (err: Error) => {
                         if (!failed) {
                             failed = true;
                             reject(err);
                         }
-                    }
+                    },
                 });
             });
 
-            this.socket.write(Buffer.concat(buffers))
+            this.socket.write(Buffer.concat(buffers));
         });
     }
 
@@ -172,7 +168,13 @@ export class Connection {
             const firstByte = iterationBuffer.readUInt8(offset);
             offset++;
 
-            const processed = this.tryHandleResponse(type, current, iterationBuffer, firstByte, offset);
+            const processed = this.tryHandleResponse(
+                type,
+                current,
+                iterationBuffer,
+                firstByte,
+                offset
+            );
             /* c8 ignore next */
             if (!processed) break;
 
