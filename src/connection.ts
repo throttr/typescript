@@ -109,18 +109,38 @@ export class Connection {
      *
      * @param request
      */
-    send(request: Request): Promise<FullResponse | SimpleResponse> {
-        const buffer = BuildRequest(request, this.value_size);
-        const expectedType = GetExpectedResponseType(request);
+    send(request: Request | Request[]): Promise<FullResponse | SimpleResponse | (FullResponse | SimpleResponse)[]> {
+        const requests = Array.isArray(request) ? request : [request];
+        const buffers = requests.map(req => BuildRequest(req, this.value_size));
+        const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
         return new Promise((resolve, reject) => {
-            this.queue.push({
-                buffer: buffer,
-                resolve: resolve,
-                reject: reject,
-                expectedType: expectedType,
+            const responses: (FullResponse | SimpleResponse)[] = [];
+            let remaining = requests.length;
+            let failed = false;
+
+            buffers.forEach((buffer, index) => {
+                this.queue.push({
+                    buffer: buffer,
+                    expectedType: expectedTypes[index],
+                    resolve: (res: FullResponse | SimpleResponse) => {
+                        if (failed) return;
+                        responses[index] = res;
+                        remaining--;
+                        if (remaining === 0) {
+                            resolve(Array.isArray(request) ? responses : responses[0]);
+                        }
+                    },
+                    reject: (err: any) => {
+                        if (!failed) {
+                            failed = true;
+                            reject(err);
+                        }
+                    }
+                });
             });
-            this.socket.write(buffer);
+
+            this.socket.write(Buffer.concat(buffers))
         });
     }
 
@@ -146,6 +166,9 @@ export class Connection {
         while (this.queue.length > 0 && offset < iterationBuffer.length) {
             const current = this.queue[0];
             const type = current.expectedType;
+
+            if (offset >= iterationBuffer.length) break;
+
             const firstByte = iterationBuffer.readUInt8(offset);
             offset++;
 
@@ -193,7 +216,7 @@ export class Connection {
             if (buffer.length < offset - 1 + expectedLength) return false;
 
             const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
-            return this.tryParse(slice, type, current, offset + expectedLength);
+            return this.tryParse(slice, type, current, offset - 1 + expectedLength);
             /* c8 ignore start */
         }
 

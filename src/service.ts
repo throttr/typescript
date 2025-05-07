@@ -70,16 +70,26 @@ export class Service {
      *
      * @param request
      */
-    async send(request: Request): Promise<FullResponse | SimpleResponse> {
+    async send(request: Request): Promise<FullResponse | SimpleResponse>;
+    async send(request: Request[]): Promise<(FullResponse | SimpleResponse)[]>;
+    async send(request: Request | Request[]): Promise<any> {
         /* c8 ignore start */
         if (this.connections.length === 0) {
             throw new Error('No available connections.');
         }
         /* c8 ignore stop */
+        return this.getConnection().send(request);
+    }
 
+    /**
+     * Get connection
+     *
+     * @private
+     */
+    private getConnection(): Connection {
         const conn = this.connections[this.round_robin_index];
         this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
-        return conn.send(request);
+        return conn;
     }
 
     /**
