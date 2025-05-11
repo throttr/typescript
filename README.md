@@ -20,9 +20,9 @@
 <a href="https://sonarcloud.io/project/overview?id=throttr_typescript"><img src="https://sonarcloud.io/api/project_badges/measure?project=throttr_throttr&metric=sqale_rating" alt="Maintainability"></a>
 </p>
 
-TypeScript/Node.js client for communicating with a Throttr server over TCP.
+TypeScript/Node.js client for communicating with a [Throttr Server](https://github.com/throttr/throttr).
 
-The SDK enables sending traffic control requests efficiently, without HTTP, respecting the server's native binary protocol.
+The SDK enables [in-memory data objects](https://en.wikipedia.org/wiki/In-memory_database) and [rate limiting](https://en.wikipedia.org/wiki/Rate_limiting) efficiently, only using TCP, respecting the server's native binary protocol.
 
 ## 🛠️ Installation
 
