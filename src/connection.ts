@@ -104,9 +104,7 @@ export class Connection {
      *
      * @param request
      */
-    send(
-        request: Request | Request[]
-    ): Promise<Response | Response[]> {
+    send(request: Request | Request[]): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
         const buffers = requests.map(req => BuildRequest(req, this.value_size));
 

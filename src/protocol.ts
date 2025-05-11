@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import {Request, RequestType, ResponseType, ValueSize} from './types';
-import {parseResponse, serializeRequest} from './utils';
+import { Request, RequestType, ResponseType, ValueSize } from './types';
+import { parseResponse, serializeRequest } from './utils';
 
 /**
  * Build request

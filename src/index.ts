@@ -15,4 +15,12 @@
 
 export { Service } from './service';
 export { RequestType, TTLType, AttributeType, ChangeType, ValueSize } from './types';
-export type { Request, QueryResponse, GetResponse, StatusResponse, SimpleResponse, FullResponse, StorageResponse } from './types';
+export type {
+    Request,
+    QueryResponse,
+    GetResponse,
+    StatusResponse,
+    SimpleResponse,
+    FullResponse,
+    StorageResponse,
+} from './types';

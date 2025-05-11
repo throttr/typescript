@@ -273,7 +273,6 @@ export interface GetRequest {
     key: string;
 }
 
-
 /**
  * Get request
  */
@@ -307,7 +306,13 @@ export interface SetRequest {
 /**
  * Request
  */
-export type Request = InsertRequest | QueryRequest | PurgeRequest | UpdateRequest | SetRequest | GetRequest;
+export type Request =
+    | InsertRequest
+    | QueryRequest
+    | PurgeRequest
+    | UpdateRequest
+    | SetRequest
+    | GetRequest;
 
 /**
  * Query response

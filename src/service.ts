@@ -71,7 +71,7 @@ export class Service {
      * @param request
      */
     async send(request: Request): Promise<Response>;
-    async send(request: Request[]): Promise<(Response)[]>;
+    async send(request: Request[]): Promise<Response[]>;
     async send(request: Request | Request[]): Promise<any> {
         /* c8 ignore start */
         if (this.connections.length === 0) {

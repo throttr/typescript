@@ -13,7 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import {Request, Response, RequestType, ResponseType, TTLType, ValueSize, QueryResponse, StatusResponse, GetResponse} from './types';
+import {
+    Request,
+    Response,
+    RequestType,
+    ResponseType,
+    TTLType,
+    ValueSize,
+    QueryResponse,
+    StatusResponse,
+    GetResponse,
+} from './types';
 
 /* c8 ignore start */
 /**
@@ -61,12 +71,7 @@ function writeOnRequest(
  * @param offset
  * @param value_size
  */
-function writeByValue(
-    buffer: Buffer,
-    value: number,
-    offset: number,
-    value_size: ValueSize
-) {
+function writeByValue(buffer: Buffer, value: number, offset: number, value_size: ValueSize) {
     switch (value_size) {
         case ValueSize.UInt64:
             // @ts-ignore
@@ -149,12 +154,12 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // ttl_type
-                value_size.valueOf() + // ttl (little endian)
-                1 + // key_size
-                value_size.valueOf() + // value_size
-                keyBuffer.length +
-                valueBuffer.length
+                    1 + // ttl_type
+                    value_size.valueOf() + // ttl (little endian)
+                    1 + // key_size
+                    value_size.valueOf() + // value_size
+                    keyBuffer.length +
+                    valueBuffer.length
             );
 
             let offset = 0;
@@ -238,7 +243,7 @@ export function parseResponse(
     expected: ResponseType,
     value_size: ValueSize
 ): Response {
-    if (expected === "query") {
+    if (expected === 'query') {
         if (buffer.length === 1) {
             return {
                 success: false,

@@ -23,8 +23,8 @@ import {
     TTLType,
     ValueSize,
 } from '../src';
-import {expect} from 'vitest';
-import {GetResponse} from "../src/types";
+import { expect } from 'vitest';
+import { GetResponse } from '../src/types';
 
 describe('Service', () => {
     let service: Service;
@@ -369,8 +369,8 @@ describe('Service', () => {
         expect(exists_query.success).toBe(false);
     });
 
-    it('should set and get values from the memory', async() => {
-        const key = "in-memory";
+    it('should set and get values from the memory', async () => {
+        const key = 'in-memory';
 
         // After that we're going to set something in memory
 
@@ -379,7 +379,7 @@ describe('Service', () => {
             key: key,
             ttl_type: TTLType.Seconds,
             ttl: 30,
-            value: "EHLO",
+            value: 'EHLO',
         })) as StatusResponse;
 
         expect(set.success).toBe(true);
@@ -393,7 +393,7 @@ describe('Service', () => {
 
         expect(typeof get.success).toBe('boolean');
         expect(typeof get.value).toMatch(/string/);
-        expect(get.value).toBe("EHLO");
+        expect(get.value).toBe('EHLO');
 
         // After that we're going to purge the key ...
 
