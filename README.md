@@ -98,7 +98,7 @@ await service.send({
 ### As in-memory database
 
 ```typescript
-const key = "json-storage";
+const key = 'json-storage';
 
 // Set arbitrary data into the storage
 const set_response = await service.send({
@@ -106,7 +106,7 @@ const set_response = await service.send({
     key: key,
     ttl_type: TTLType.Hours,
     ttl: 24,
-    value: "EHLO",
+    value: 'EHLO',
 });
 
 // Get from the memory
@@ -115,7 +115,7 @@ const get_response = await service.send({
     key: key,
 });
 
-console.log("Data: ", get_response.value) // Must be "EHLO"
+console.log('Data: ', get_response.value); // Must be "EHLO"
 
 // Optionally, purge the key
 await service.send({
