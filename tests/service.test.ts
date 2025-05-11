@@ -395,16 +395,12 @@ describe('Service', () => {
         expect(typeof get.value).toMatch(/string/);
         expect(get.value).toBe("EHLO");
 
-        console.log(get);
-
         // After that we're going to purge the key ...
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
             key: key,
         })) as StatusResponse;
-
-        console.log(success_purge.success);
 
         expect(typeof success_purge.success).toBe('boolean');
 

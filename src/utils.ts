@@ -289,6 +289,7 @@ export function parseResponse(
             const length = read(buffer, offset, value_size);
             offset += value_size.valueOf();
             const value = buffer.toString('utf-8', offset);
+            offset += length as number;
 
             return {
                 success: success,

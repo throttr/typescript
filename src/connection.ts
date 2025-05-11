@@ -110,8 +110,6 @@ export class Connection {
         const requests = Array.isArray(request) ? request : [request];
         const buffers = requests.map(req => BuildRequest(req, this.value_size));
 
-        console.log(buffers.map((buffer) => console.log(buffer.toString('hex'))))
-
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
         return new Promise((resolve, reject) => {
@@ -236,8 +234,6 @@ export class Connection {
                 return this.tryParse(slice, type, current, offset);
             }
 
-            console.log("GET buffer", buffer.toString('hex'));
-
             const expectedLength = this.value_size * 2 + 2;
             /* c8 ignore next */
             if (buffer.length < offset - 1 + expectedLength) return false;
@@ -246,7 +242,7 @@ export class Connection {
             if (buffer.length < offset - 1 + expectedLength + valueSize) return false;
 
             const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength + valueSize);
-            return this.tryParse(slice, type, current, offset - 1 + expectedLength);
+            return this.tryParse(slice, type, current, offset - 1 + expectedLength + valueSize);
         }
 
         return false;
