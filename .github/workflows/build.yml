@@ -12,7 +12,7 @@ jobs:
 
         services:
             throttr:
-                image: ghcr.io/throttr/throttr:4.0.11-debug-${{ matrix.size }}
+                image: ghcr.io/throttr/throttr:4.0.14-debug-${{ matrix.size }}
                 ports:
                     - 9000:9000
 

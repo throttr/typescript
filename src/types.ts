@@ -407,3 +407,10 @@ export interface QueuedRequest {
      */
     expectedType: ResponseType;
 }
+
+/**
+ * Backward compatibility interfaces
+ */
+export type SimpleResponse = StatusResponse;
+export type FullResponse = QueryResponse;
+export type StorageResponse = GetResponse;
