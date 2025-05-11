@@ -236,11 +236,11 @@ export class Connection {
             /* c8 ignore next */
             if (buffer.length < offset - 1 + expectedLength) return false;
 
-            const valueSize = read(buffer, 2 + this.value_size, this.value_size) as number;
-            if (buffer.length < offset - 1 + expectedLength + valueSize) return false;
+            const valueSize = read(buffer, 2 + this.value_size, this.value_size);
+            if (buffer.length < offset - 1 + expectedLength + Number(valueSize)) return false;
 
-            const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength + valueSize);
-            return this.tryParse(slice, type, current, offset - 1 + expectedLength + valueSize);
+            const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength + Number(valueSize));
+            return this.tryParse(slice, type, current, offset - 1 + expectedLength + Number(valueSize));
         }
 
         return false;

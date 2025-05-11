@@ -407,6 +407,16 @@ describe('Service', () => {
         // And that should be fine ...
 
         expect(success_purge.success).toBe(true);
+
+        // After that we're going to check if key has been purged ...
+
+        const check = (await service.send({
+            type: RequestType.Get,
+            key: key,
+        })) as GetResponse;
+
+        expect(typeof check.success).toBe('boolean');
+        expect(check.success).toBe(false);
     });
 
     it('should insert and query multiple keys in a single batch write', async () => {

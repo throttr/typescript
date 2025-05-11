@@ -20,7 +20,4 @@ export type {
     QueryResponse,
     GetResponse,
     StatusResponse,
-    SimpleResponse,
-    FullResponse,
-    StorageResponse,
 } from './types';

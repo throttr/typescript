@@ -40,6 +40,8 @@ npm install @throttr/sdk
 
 ## Basic Usage
 
+### As Rate Limiter
+
 ```typescript
 import { Service, RequestType, TTLType, AttributeType, ChangeType, ValueSize } from '@throttr/sdk';
 
@@ -87,6 +89,35 @@ console.log('TTL Type:', query_response.ttl_type);
 console.log('TTL:', query_response.ttl);
 
 // Optionally, purge the quota
+await service.send({
+    type: RequestType.Purge,
+    key: key,
+});
+```
+
+### As in-memory database
+
+```typescript
+const key = "json-storage";
+
+// Set arbitrary data into the storage
+const set_response = await service.send({
+    type: RequestType.Set,
+    key: key,
+    ttl_type: TTLType.Hours,
+    ttl: 24,
+    value: "EHLO",
+});
+
+// Get from the memory
+const get_response = await service.send({
+    type: RequestType.Get,
+    key: key,
+});
+
+console.log("Data: ", get_response.value) // Must be "EHLO"
+
+// Optionally, purge the key
 await service.send({
     type: RequestType.Purge,
     key: key,

@@ -111,6 +111,7 @@ export function read(buffer: Buffer, offset: number, value_size: ValueSize) {
             return buffer.readUInt8(offset);
     }
 }
+
 /* c8 ignore stop */
 
 /**
@@ -275,33 +276,30 @@ export function parseResponse(
         return {
             success: buffer.readUInt8(0) === 1,
         } as StatusResponse;
+    } else if (buffer.length === 1) {
+        return {
+            success: false,
+            quota: 0,
+            ttl_type: TTLType.Nanoseconds,
+            ttl: 0,
+        };
     } else {
-        if (buffer.length === 1) {
-            return {
-                success: false,
-                quota: 0,
-                ttl_type: TTLType.Nanoseconds,
-                ttl: 0,
-            };
-        } else {
-            let offset = 0;
-            const success = buffer.readUInt8(offset) === 1;
-            offset += 1;
-            const ttl_type = buffer.readUInt8(offset);
-            offset += 1;
-            const ttl = read(buffer, offset, value_size);
-            offset += value_size.valueOf();
-            const length = read(buffer, offset, value_size);
-            offset += value_size.valueOf();
-            const value = buffer.toString('utf-8', offset);
-            offset += length as number;
+        let offset = 0;
+        const success = buffer.readUInt8(offset) === 1;
+        offset += 1;
+        const ttl_type = buffer.readUInt8(offset);
+        offset += 1;
+        const ttl = read(buffer, offset, value_size);
+        offset += value_size.valueOf();
+        read(buffer, offset, value_size);
+        offset += value_size.valueOf();
+        const value = buffer.toString('utf-8', offset);
 
-            return {
-                success: success,
-                ttl_type: ttl_type,
-                ttl: ttl,
-                value: value,
-            } as GetResponse;
-        }
+        return {
+            success: success,
+            ttl_type: ttl_type,
+            ttl: ttl,
+            value: value,
+        } as GetResponse;
     }
 }
