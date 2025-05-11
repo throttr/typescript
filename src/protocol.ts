@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Request, RequestType, ValueSize } from './types';
-import { serializeRequest, parseResponse } from './utils';
+import {Request, RequestType, ResponseType, ValueSize} from './types';
+import {parseResponse, serializeRequest} from './utils';
 
 /**
  * Build request
@@ -30,7 +30,7 @@ export const BuildRequest = serializeRequest;
  * @param expected
  * @param value_size
  */
-export function ParseResponse(buffer: Buffer, expected: 'full' | 'simple', value_size: ValueSize) {
+export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size: ValueSize) {
     return parseResponse(buffer, expected, value_size);
 }
 
@@ -39,14 +39,17 @@ export function ParseResponse(buffer: Buffer, expected: 'full' | 'simple', value
  *
  * @param request
  */
-export function GetExpectedResponseType(request: Request): 'full' | 'simple' {
+export function GetExpectedResponseType(request: Request): ResponseType {
     switch (request.type) {
-        case RequestType.Query:
-            return 'full';
         case RequestType.Update:
         case RequestType.Purge:
         case RequestType.Insert:
-            return 'simple';
+        case RequestType.Set:
+            return 'status';
+        case RequestType.Query:
+            return 'query';
+        case RequestType.Get:
+            return 'get';
         /* c8 ignore start */
         default:
             throw new Error('Unknown request type');

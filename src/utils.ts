@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { FullResponse, Request, RequestType, SimpleResponse, TTLType, ValueSize } from './types';
+import {Request, Response, RequestType, ResponseType, TTLType, ValueSize, QueryResponse, StatusResponse, GetResponse} from './types';
 
 /* c8 ignore start */
 /**
@@ -53,13 +53,48 @@ function writeOnRequest(
 }
 
 /**
+ * Write by value
+ *
+ * @param request
+ * @param buffer
+ * @param value
+ * @param offset
+ * @param value_size
+ */
+function writeByValue(
+    buffer: Buffer,
+    value: number,
+    offset: number,
+    value_size: ValueSize
+) {
+    switch (value_size) {
+        case ValueSize.UInt64:
+            // @ts-ignore
+            buffer.writeBigUInt64LE(BigInt(value), offset);
+            break;
+        case ValueSize.UInt32:
+            // @ts-ignore
+            buffer.writeUint32LE(value, offset);
+            break;
+        case ValueSize.UInt16:
+            // @ts-ignore
+            buffer.writeUint16LE(value, offset);
+            break;
+        case ValueSize.UInt8:
+            // @ts-ignore
+            buffer.writeUint8(value, offset);
+            break;
+    }
+}
+
+/**
  * Read
  *
  * @param buffer
  * @param offset
  * @param value_size
  */
-function read(buffer: Buffer, offset: number, value_size: ValueSize) {
+export function read(buffer: Buffer, offset: number, value_size: ValueSize) {
     switch (value_size) {
         case ValueSize.UInt64:
             return buffer.readBigUInt64LE(offset);
@@ -108,7 +143,39 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
             return buffer;
         }
 
+        case RequestType.Set: {
+            const keyBuffer = Buffer.from(request.key, 'utf-8');
+            const valueBuffer = Buffer.from(request.value, 'utf-8');
+
+            const buffer = Buffer.allocUnsafe(
+                1 + // request_type
+                1 + // ttl_type
+                value_size.valueOf() + // ttl (little endian)
+                1 + // key_size
+                value_size.valueOf() + // value_size
+                keyBuffer.length +
+                valueBuffer.length
+            );
+
+            let offset = 0;
+            buffer.writeUInt8(request.type, offset);
+            offset += 1;
+            buffer.writeUInt8(request.ttl_type, offset);
+            offset += 1;
+            writeOnRequest(request, buffer, 'ttl', offset, value_size);
+            offset += value_size.valueOf();
+            buffer.writeUInt8(keyBuffer.length, offset);
+            offset += 1;
+            writeByValue(buffer, valueBuffer.length, offset, value_size);
+            offset += value_size.valueOf();
+            keyBuffer.copy(buffer, offset);
+            offset += keyBuffer.length;
+            valueBuffer.copy(buffer, offset);
+            return buffer;
+        }
+
         case RequestType.Query:
+        case RequestType.Get:
         case RequestType.Purge: {
             const keyBuffer = Buffer.from(request.key, 'utf-8');
 
@@ -168,10 +235,10 @@ export function serializeRequest(request: Request, value_size: ValueSize): Buffe
  */
 export function parseResponse(
     buffer: Buffer,
-    expected: 'full' | 'simple',
+    expected: ResponseType,
     value_size: ValueSize
-): FullResponse | SimpleResponse {
-    if (expected === 'full') {
+): Response {
+    if (expected === "query") {
         if (buffer.length === 1) {
             return {
                 success: false,
@@ -195,13 +262,40 @@ export function parseResponse(
             quota: quota,
             ttl_type: ttl_type,
             ttl: ttl,
-        };
-    } else {
+        } as QueryResponse;
+    } else if (expected === 'status') {
         if (buffer.length !== 1) {
-            throw new Error(`Invalid simple response length: ${buffer.length}`);
+            throw new Error(`Invalid status response length: ${buffer.length}`);
         }
         return {
             success: buffer.readUInt8(0) === 1,
-        };
+        } as StatusResponse;
+    } else {
+        if (buffer.length === 1) {
+            return {
+                success: false,
+                quota: 0,
+                ttl_type: TTLType.Nanoseconds,
+                ttl: 0,
+            };
+        } else {
+            let offset = 0;
+            const success = buffer.readUInt8(offset) === 1;
+            offset += 1;
+            const ttl_type = buffer.readUInt8(offset);
+            offset += 1;
+            const ttl = read(buffer, offset, value_size);
+            offset += value_size.valueOf();
+            const length = read(buffer, offset, value_size);
+            offset += value_size.valueOf();
+            const value = buffer.toString('utf-8', offset);
+
+            return {
+                success: success,
+                ttl_type: ttl_type,
+                ttl: ttl,
+                value: value,
+            } as GetResponse;
+        }
     }
 }

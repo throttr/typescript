@@ -14,8 +14,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import { Request, FullResponse, SimpleResponse, QueuedRequest, ValueSize } from './types';
+import { Request, Response, ResponseType, QueuedRequest, ValueSize } from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
+import { read } from './utils';
 
 /**
  * Connection
@@ -105,13 +106,16 @@ export class Connection {
      */
     send(
         request: Request | Request[]
-    ): Promise<FullResponse | SimpleResponse | (FullResponse | SimpleResponse)[]> {
+    ): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
         const buffers = requests.map(req => BuildRequest(req, this.value_size));
+
+        console.log(buffers.map((buffer) => console.log(buffer.toString('hex'))))
+
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
         return new Promise((resolve, reject) => {
-            const responses: (FullResponse | SimpleResponse)[] = [];
+            const responses: Response[] = [];
             let remaining = requests.length;
             let failed = false;
 
@@ -119,11 +123,11 @@ export class Connection {
                 this.queue.push({
                     buffer: buffer,
                     expectedType: expectedTypes[index],
-                    resolve: (res: FullResponse | SimpleResponse) => {
+                    resolve: (response: Response) => {
                         /* c8 ignore start */
                         if (failed) return;
                         /* c8 ignore stop */
-                        responses[index] = res;
+                        responses[index] = response;
                         remaining--;
                         if (remaining === 0) {
                             resolve(Array.isArray(request) ? responses : responses[0]);
@@ -200,18 +204,18 @@ export class Connection {
      * @private
      */
     private tryHandleResponse(
-        type: 'simple' | 'full',
+        type: ResponseType,
         current: QueuedRequest,
         buffer: Buffer,
         firstByte: number,
         offset: number
     ): { offset: number } | false {
-        if (type === 'simple') {
+        if (type === 'status') {
             const slice = buffer.subarray(offset - 1, offset);
             return this.tryParse(slice, type, current, offset);
         }
 
-        if (type === 'full') {
+        if (type === 'query') {
             if (firstByte === 0x00) {
                 const slice = buffer.subarray(offset - 1, offset);
                 return this.tryParse(slice, type, current, offset);
@@ -224,6 +228,25 @@ export class Connection {
             const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
             return this.tryParse(slice, type, current, offset - 1 + expectedLength);
             /* c8 ignore start */
+        }
+
+        if (type === 'get') {
+            if (firstByte === 0x00) {
+                const slice = buffer.subarray(offset - 1, offset);
+                return this.tryParse(slice, type, current, offset);
+            }
+
+            console.log("GET buffer", buffer.toString('hex'));
+
+            const expectedLength = this.value_size * 2 + 2;
+            /* c8 ignore next */
+            if (buffer.length < offset - 1 + expectedLength) return false;
+
+            const valueSize = read(buffer, 2 + this.value_size, this.value_size) as number;
+            if (buffer.length < offset - 1 + expectedLength + valueSize) return false;
+
+            const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength + valueSize);
+            return this.tryParse(slice, type, current, offset - 1 + expectedLength);
         }
 
         return false;
@@ -241,7 +264,7 @@ export class Connection {
      */
     private tryParse(
         slice: Buffer,
-        type: 'simple' | 'full',
+        type: ResponseType,
         current: QueuedRequest,
         nextOffset: number
     ): { offset: number } {

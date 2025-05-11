@@ -16,14 +16,15 @@
 import {
     AttributeType,
     ChangeType,
-    FullResponse,
+    QueryResponse,
     RequestType,
     Service,
-    SimpleResponse,
+    StatusResponse,
     TTLType,
     ValueSize,
 } from '../src';
-import { expect } from 'vitest';
+import {expect} from 'vitest';
+import {GetResponse} from "../src/types";
 
 describe('Service', () => {
     let service: Service;
@@ -65,7 +66,7 @@ describe('Service', () => {
             quota: flexNumber(isBigInt, 7),
             ttl_type: TTLType.Seconds,
             ttl: flexNumber(isBigInt, 60),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof insert.success).toBe('boolean');
 
@@ -78,7 +79,7 @@ describe('Service', () => {
         const first_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof first_query.success).toBe('boolean');
         expect(typeof first_query.quota).toMatch(/number|bigint/);
@@ -101,7 +102,7 @@ describe('Service', () => {
             attribute: AttributeType.Quota,
             change: ChangeType.Decrease,
             value: flexNumber(isBigInt, 7),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_decrease_update.success).toBe('boolean');
 
@@ -117,7 +118,7 @@ describe('Service', () => {
             attribute: AttributeType.Quota,
             change: ChangeType.Decrease,
             value: flexNumber(isBigInt, 7),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof failed_decrease_update.success).toBe('boolean');
 
@@ -130,7 +131,7 @@ describe('Service', () => {
         const empty_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof empty_quota_query.success).toBe('boolean');
         expect(typeof empty_quota_query.quota).toMatch(/number|bigint/);
@@ -153,7 +154,7 @@ describe('Service', () => {
             attribute: AttributeType.Quota,
             change: ChangeType.Patch,
             value: flexNumber(isBigInt, 10),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_patch_update.success).toBe('boolean');
 
@@ -166,7 +167,7 @@ describe('Service', () => {
         const patched_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof patched_quota_query.success).toBe('boolean');
         expect(typeof patched_quota_query.quota).toMatch(/number|bigint/);
@@ -189,7 +190,7 @@ describe('Service', () => {
             attribute: AttributeType.Quota,
             change: ChangeType.Increase,
             value: flexNumber(isBigInt, 20),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_increase_update.success).toBe('boolean');
 
@@ -202,7 +203,7 @@ describe('Service', () => {
         const increased_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof increased_quota_query.success).toBe('boolean');
         expect(typeof increased_quota_query.quota).toMatch(/number|bigint/);
@@ -225,7 +226,7 @@ describe('Service', () => {
             attribute: AttributeType.TTL,
             change: ChangeType.Increase,
             value: flexNumber(isBigInt, 60),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_increase_ttl.success).toBe('boolean');
 
@@ -238,7 +239,7 @@ describe('Service', () => {
         const increased_ttl_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof increased_ttl_query.success).toBe('boolean');
         expect(typeof increased_ttl_query.quota).toMatch(/number|bigint/);
@@ -261,7 +262,7 @@ describe('Service', () => {
             attribute: AttributeType.TTL,
             change: ChangeType.Decrease,
             value: flexNumber(isBigInt, 60),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_decrease_ttl.success).toBe('boolean');
 
@@ -274,7 +275,7 @@ describe('Service', () => {
         const decrease_ttl_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof decrease_ttl_query.success).toBe('boolean');
         expect(typeof decrease_ttl_query.quota).toMatch(/number|bigint/);
@@ -297,7 +298,7 @@ describe('Service', () => {
             attribute: AttributeType.TTL,
             change: ChangeType.Patch,
             value: flexNumber(isBigInt, 90),
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_patch_ttl.success).toBe('boolean');
 
@@ -310,7 +311,7 @@ describe('Service', () => {
         const patch_ttl_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof patch_ttl_query.success).toBe('boolean');
         expect(typeof patch_ttl_query.quota).toMatch(/number|bigint/);
@@ -330,7 +331,7 @@ describe('Service', () => {
         const success_purge = (await service.send({
             type: RequestType.Purge,
             key: key,
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof success_purge.success).toBe('boolean');
 
@@ -343,7 +344,7 @@ describe('Service', () => {
         const failed_purge = (await service.send({
             type: RequestType.Purge,
             key: key,
-        })) as SimpleResponse;
+        })) as StatusResponse;
 
         expect(typeof failed_purge.success).toBe('boolean');
 
@@ -356,7 +357,7 @@ describe('Service', () => {
         const exists_query = (await service.send({
             type: RequestType.Query,
             key: key,
-        })) as FullResponse;
+        })) as QueryResponse;
 
         expect(typeof exists_query.success).toBe('boolean');
         expect(typeof exists_query.quota).toMatch(/number|bigint/);
@@ -366,6 +367,50 @@ describe('Service', () => {
         // And that should fail ...
 
         expect(exists_query.success).toBe(false);
+    });
+
+    it('should set and get values from the memory', async() => {
+        const key = "in-memory";
+
+        // After that we're going to set something in memory
+
+        const set = (await service.send({
+            type: RequestType.Set,
+            key: key,
+            ttl_type: TTLType.Seconds,
+            ttl: 30,
+            value: "EHLO",
+        })) as StatusResponse;
+
+        expect(set.success).toBe(true);
+
+        // After that we're going to get that key ...
+
+        const get = (await service.send({
+            type: RequestType.Get,
+            key: key,
+        })) as GetResponse;
+
+        expect(typeof get.success).toBe('boolean');
+        expect(typeof get.value).toMatch(/string/);
+        expect(get.value).toBe("EHLO");
+
+        console.log(get);
+
+        // After that we're going to purge the key ...
+
+        const success_purge = (await service.send({
+            type: RequestType.Purge,
+            key: key,
+        })) as StatusResponse;
+
+        console.log(success_purge.success);
+
+        expect(typeof success_purge.success).toBe('boolean');
+
+        // And that should be fine ...
+
+        expect(success_purge.success).toBe(true);
     });
 
     it('should insert and query multiple keys in a single batch write', async () => {
@@ -391,7 +436,7 @@ describe('Service', () => {
                 ttl_type: TTLType.Seconds,
                 ttl: flexNumber(isBigInt, 30),
             },
-        ])) as SimpleResponse[];
+        ])) as StatusResponse[];
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);
@@ -405,7 +450,7 @@ describe('Service', () => {
                 type: RequestType.Query,
                 key: key2,
             },
-        ])) as FullResponse[];
+        ])) as QueryResponse[];
 
         expect(query1.success).toBe(true);
         expect(query1.quota).toBe(flexNumber(isBigInt, 7));

@@ -25,10 +25,10 @@ describe('Utils', () => {
         );
     });
 
-    it('should throw error on invalid simple response length', () => {
+    it('should throw error on invalid status response length', () => {
         const invalidBuffer = Buffer.alloc(2); // debería ser 1
-        expect(() => parseResponse(invalidBuffer, 'simple', ValueSize.UInt16)).toThrowError(
-            /Invalid simple response length/
+        expect(() => parseResponse(invalidBuffer, 'status', ValueSize.UInt16)).toThrowError(
+            /Invalid status response length/
         );
     });
 });
