@@ -95,7 +95,7 @@ await service.send({
 });
 ```
 
-### As in-memory database
+### As Database
 
 ```typescript
 const key = 'json-storage';
