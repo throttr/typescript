@@ -61,6 +61,16 @@ export enum RequestType {
      * Purge
      */
     Purge = 0x04,
+
+    /**
+     * Set
+     */
+    Set = 0x05,
+
+    /**
+     * Get
+     */
+    Get = 0x06,
 }
 
 /**
@@ -249,14 +259,65 @@ export interface UpdateRequest {
 }
 
 /**
- * Request
+ * Get request
  */
-export type Request = InsertRequest | QueryRequest | PurgeRequest | UpdateRequest;
+export interface GetRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Get;
+
+    /**
+     * Key
+     */
+    key: string;
+}
 
 /**
- * Full response
+ * Get request
  */
-export interface FullResponse {
+export interface SetRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Set;
+
+    /**
+     * TTL type
+     */
+    ttl_type: TTLType;
+
+    /**
+     * TTL
+     */
+    ttl: number | bigint;
+
+    /**
+     * Key
+     */
+    key: string;
+
+    /**
+     * Value
+     */
+    value: string;
+}
+
+/**
+ * Request
+ */
+export type Request =
+    | InsertRequest
+    | QueryRequest
+    | PurgeRequest
+    | UpdateRequest
+    | SetRequest
+    | GetRequest;
+
+/**
+ * Query response
+ */
+export interface QueryResponse {
     /**
      * Allowed
      */
@@ -279,14 +340,49 @@ export interface FullResponse {
 }
 
 /**
- * Simple response
+ * Get response
  */
-export interface SimpleResponse {
+export interface GetResponse {
+    /**
+     * Allowed
+     */
+    success: boolean;
+
+    /**
+     * TTL type
+     */
+    ttl_type: TTLType;
+
+    /**
+     * TTL remaining
+     */
+    ttl: number | bigint;
+
+    /**
+     * Value
+     */
+    value: string;
+}
+
+/**
+ * Status response
+ */
+export interface StatusResponse {
     /**
      * Success
      */
     success: boolean;
 }
+
+/**
+ * Response types
+ */
+export type ResponseType = 'status' | 'query' | 'get';
+
+/**
+ * Request
+ */
+export type Response = StatusResponse | QueryResponse | GetResponse;
 
 /**
  * Queued request
@@ -302,7 +398,7 @@ export interface QueuedRequest {
      *
      * @param response
      */
-    resolve: (response: FullResponse | SimpleResponse) => void;
+    resolve: (response: Response) => void;
 
     /**
      * Reject
@@ -314,5 +410,5 @@ export interface QueuedRequest {
     /**
      * Expected type
      */
-    expectedType: 'full' | 'simple';
+    expectedType: ResponseType;
 }

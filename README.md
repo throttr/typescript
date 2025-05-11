@@ -40,6 +40,8 @@ npm install @throttr/sdk
 
 ## Basic Usage
 
+### As Rate Limiter
+
 ```typescript
 import { Service, RequestType, TTLType, AttributeType, ChangeType, ValueSize } from '@throttr/sdk';
 
@@ -91,6 +93,35 @@ await service.send({
     type: RequestType.Purge,
     key: key,
 });
+```
+
+### As in-memory database
+
+```typescript
+const key = 'json-storage';
+
+// Set arbitrary data into the storage
+const set_response = await service.send({
+    type: RequestType.Set,
+    key: key,
+    ttl_type: TTLType.Hours,
+    ttl: 24,
+    value: 'EHLO',
+});
+
+// Get from the memory
+const get_response = await service.send({
+    type: RequestType.Get,
+    key: key,
+});
+
+console.log('Data: ', get_response.value); // Must be "EHLO"
+
+// Optionally, purge the key
+await service.send({
+    type: RequestType.Purge,
+    key: key,
+});
 
 // Disconnect once done
 service.disconnect();
@@ -102,7 +133,7 @@ See more examples in [tests](./tests/service.test.ts).
 
 - The protocol assumes Little Endian architecture.
 - The internal message queue ensures requests are processed sequentially.
-- The package is defined to works with protocol 4.0.11 or greatest.
+- The package is defined to works with protocol 4.0.14 or greatest.
 
 ---
 

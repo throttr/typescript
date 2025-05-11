@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Configuration, Request, FullResponse, SimpleResponse } from './types';
+import { Configuration, Request, Response } from './types';
 import { Connection } from './connection';
 
 /**
@@ -70,8 +70,8 @@ export class Service {
      *
      * @param request
      */
-    async send(request: Request): Promise<FullResponse | SimpleResponse>;
-    async send(request: Request[]): Promise<(FullResponse | SimpleResponse)[]>;
+    async send(request: Request): Promise<Response>;
+    async send(request: Request[]): Promise<Response[]>;
     async send(request: Request | Request[]): Promise<any> {
         /* c8 ignore start */
         if (this.connections.length === 0) {
