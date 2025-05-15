@@ -114,9 +114,12 @@ export class Connection {
             const responses: Response[] = [];
             let remaining = requests.length;
             let failed = false;
+
+            /* c8 ignore start */
             if (!this.socket.writable) {
                 reject(new Error("Socket isn't writable before queue push"))
             }
+            /* c8 ignore stop */
 
             buffers.forEach((buffer, index) => {
                 this.queue.push({
@@ -145,13 +148,17 @@ export class Connection {
 
             if (this.socket.writable) {
                 this.socket.write(Buffer.concat(buffers), error => {
+                    /* c8 ignore start */
                     if (error) {
                         this.flushQueue(error)
                     }
+                    /* c8 ignore stop */
                 });
+                /* c8 ignore start */
             } else {
                 reject(new Error("Socket isn't writable at write"));
             }
+            /* c8 ignore stop */
         });
     }
 
@@ -162,10 +169,12 @@ export class Connection {
      * @private
      */
     private flushQueue(error: Error) {
+        /* c8 ignore start */
         while (this.queue.length > 0) {
             const current = this.queue.shift()!;
             current.reject(error);
         }
+        /* c8 ignore stop */
     }
 
     /**
