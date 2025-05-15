@@ -114,9 +114,14 @@ export class Connection {
             const responses: Response[] = [];
             let remaining = requests.length;
             let failed = false;
+            const indexes = [];
+
+            if (!this.socket.writable) {
+                reject("Socket isn't writable before queue push")
+            }
 
             buffers.forEach((buffer, index) => {
-                this.queue.push({
+                let queue_index = this.queue.push({
                     buffer: buffer,
                     expectedType: expectedTypes[index],
                     resolve: (response: Response) => {
@@ -138,10 +143,32 @@ export class Connection {
                     },
                     /* c8 ignore stop */
                 });
+                indexes.push(queue_index);
             });
 
-            this.socket.write(Buffer.concat(buffers));
+            if (this.socket.writable) {
+                this.socket.write(Buffer.concat(buffers), error => {
+                    if (error) {
+                        this.flushQueue(error)
+                    }
+                });
+            } else {
+                reject("Socket isn't writable at write");
+            }
         });
+    }
+
+    /**
+     * Flush queue
+     *
+     * @param error
+     * @private
+     */
+    private flushQueue(error: Error) {
+        while (this.queue.length > 0) {
+            const current = this.queue.shift()!;
+            current.reject(error);
+        }
     }
 
     /**
@@ -289,10 +316,7 @@ export class Connection {
      */
     /* c8 ignore start */
     private onError(error: Error) {
-        if (this.queue.length > 0) {
-            const current = this.queue.shift()!;
-            current.reject(error);
-        }
+        this.flushQueue(error);
     }
     /* c8 ignore stop */
 
@@ -301,6 +325,7 @@ export class Connection {
      */
     disconnect() {
         this.socket.removeAllListeners();
+        this.flushQueue(new Error("Socket has been manually closed"));
         this.socket.end();
     }
 }
