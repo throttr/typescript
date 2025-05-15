@@ -115,7 +115,7 @@ export class Connection {
             let remaining = requests.length;
             let failed = false;
             if (!this.socket.writable) {
-                reject("Socket isn't writable before queue push")
+                reject(new Error("Socket isn't writable before queue push"))
             }
 
             buffers.forEach((buffer, index) => {
@@ -150,7 +150,7 @@ export class Connection {
                     }
                 });
             } else {
-                reject("Socket isn't writable at write");
+                reject(new Error("Socket isn't writable at write"));
             }
         });
     }
