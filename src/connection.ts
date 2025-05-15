@@ -114,14 +114,12 @@ export class Connection {
             const responses: Response[] = [];
             let remaining = requests.length;
             let failed = false;
-            const indexes = [];
-
             if (!this.socket.writable) {
                 reject("Socket isn't writable before queue push")
             }
 
             buffers.forEach((buffer, index) => {
-                let queue_index = this.queue.push({
+                this.queue.push({
                     buffer: buffer,
                     expectedType: expectedTypes[index],
                     resolve: (response: Response) => {
@@ -143,7 +141,6 @@ export class Connection {
                     },
                     /* c8 ignore stop */
                 });
-                indexes.push(queue_index);
             });
 
             if (this.socket.writable) {
