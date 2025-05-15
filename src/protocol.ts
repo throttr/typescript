@@ -38,11 +38,11 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                value_size.valueOf() + // quota (little endian)
-                1 + // ttl_type
-                value_size.valueOf() + // ttl (little endian)
-                1 + // key_size
-                keyBuffer.length
+                    value_size.valueOf() + // quota (little endian)
+                    1 + // ttl_type
+                    value_size.valueOf() + // ttl (little endian)
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
@@ -66,12 +66,12 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // ttl_type
-                value_size.valueOf() + // ttl (little endian)
-                1 + // key_size
-                value_size.valueOf() + // value_size
-                keyBuffer.length +
-                valueBuffer.length
+                    1 + // ttl_type
+                    value_size.valueOf() + // ttl (little endian)
+                    1 + // key_size
+                    value_size.valueOf() + // value_size
+                    keyBuffer.length +
+                    valueBuffer.length
             );
 
             let offset = 0;
@@ -98,8 +98,8 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // key_size
-                keyBuffer.length
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
@@ -116,11 +116,11 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // attribute
-                1 + // change
-                value_size.valueOf() + // value (little endian)
-                1 + // key_size
-                keyBuffer.length
+                    1 + // attribute
+                    1 + // change
+                    value_size.valueOf() + // value (little endian)
+                    1 + // key_size
+                    keyBuffer.length
             );
 
             let offset = 0;
@@ -141,7 +141,7 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
         default:
             throw new Error('Unsupported request type');
     }
-}
+};
 
 /**
  * Parse response
