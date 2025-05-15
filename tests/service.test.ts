@@ -56,7 +56,6 @@ describe('Service', () => {
     it('it should be compatible with throttr server', async () => {
         const key = '333333';
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
         // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
 
@@ -421,8 +420,6 @@ describe('Service', () => {
 
     it('should insert and query multiple keys in a single batch write', async () => {
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
-
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
         const key1 = 'batch-key-1';
         const key2 = 'batch-key-2';

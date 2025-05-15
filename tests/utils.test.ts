@@ -14,20 +14,20 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { describe, it, expect } from 'vitest';
-import { serializeRequest, parseResponse } from '../src/utils';
+import { ParseResponse, BuildRequest } from '../src/protocol';
 import { Request, ValueSize } from '../src';
 
 describe('Utils', () => {
     it('should throw error on unsupported request type', () => {
         const fakeRequest = { type: 99 } as unknown as Request;
-        expect(() => serializeRequest(fakeRequest, ValueSize.UInt16)).toThrowError(
+        expect(() => BuildRequest(fakeRequest, ValueSize.UInt16)).toThrowError(
             'Unsupported request type'
         );
     });
 
     it('should throw error on invalid status response length', () => {
         const invalidBuffer = Buffer.alloc(2); // debería ser 1
-        expect(() => parseResponse(invalidBuffer, 'status', ValueSize.UInt16)).toThrowError(
+        expect(() => ParseResponse(invalidBuffer, 'status', ValueSize.UInt16)).toThrowError(
             /Invalid status response length/
         );
     });

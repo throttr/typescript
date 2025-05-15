@@ -117,7 +117,7 @@ export class Connection {
 
             /* c8 ignore start */
             if (!this.socket.writable) {
-                reject(new Error("Socket isn't writable before queue push"))
+                reject(new Error("Socket isn't writable"));
             }
             /* c8 ignore stop */
 
@@ -146,19 +146,13 @@ export class Connection {
                 });
             });
 
-            if (this.socket.writable) {
-                this.socket.write(Buffer.concat(buffers), error => {
-                    /* c8 ignore start */
-                    if (error) {
-                        this.flushQueue(error)
-                    }
-                    /* c8 ignore stop */
-                });
+            this.socket.write(Buffer.concat(buffers), error => {
                 /* c8 ignore start */
-            } else {
-                reject(new Error("Socket isn't writable at write"));
-            }
-            /* c8 ignore stop */
+                if (error) {
+                    this.flushQueue(error);
+                }
+                /* c8 ignore stop */
+            });
         });
     }
 
@@ -331,7 +325,7 @@ export class Connection {
      */
     disconnect() {
         this.socket.removeAllListeners();
-        this.flushQueue(new Error("Socket has been manually closed"));
+        this.flushQueue(new Error('Socket has been manually closed'));
         this.socket.end();
     }
 }
