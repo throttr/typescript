@@ -44,7 +44,7 @@ describe('Service Robust', () => {
             port: 9000,
             value_size: value_size,
             operation_strategy: 'robust',
-            max_connections: 5,
+            max_connections: 3,
         });
         await service.connect();
     });
