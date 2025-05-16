@@ -201,7 +201,7 @@ export class Connection {
             this.alive = true;
         } catch (e) {
             this.alive = false;
-            throw e;
+            throw e; 
         }
     }
     /* c8 ignore stop */
