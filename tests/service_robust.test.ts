@@ -26,7 +26,7 @@ import {
 } from '../src';
 import { expect } from 'vitest';
 
-describe('Service', () => {
+describe('Service Robust', () => {
     let service: Service;
 
     beforeAll(async () => {
@@ -43,6 +43,7 @@ describe('Service', () => {
             host: '127.0.0.1',
             port: 9000,
             value_size: value_size,
+            operation_strategy: 'robust',
             max_connections: 2,
         });
         await service.connect();
@@ -55,7 +56,7 @@ describe('Service', () => {
     const flexNumber = (bigInt: boolean, number: number) => (bigInt ? BigInt(number) : number); // NOSONAR
 
     it('it should be compatible with throttr server', async () => {
-        const key = '7777777';
+        const key = '333333';
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
         await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
@@ -371,7 +372,7 @@ describe('Service', () => {
     });
 
     it('should set and get values from the memory', async () => {
-        const key = 'in-memory';
+        const key = 'in-memory-robust';
 
         // After that we're going to set something in memory
 
@@ -425,8 +426,8 @@ describe('Service', () => {
 
         await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
-        const key1 = 'batch-key-1';
-        const key2 = 'batch-key-2';
+        const key1 = 'batch-key-1-robust';
+        const key2 = 'batch-key-2-robust';
 
         const [res1, res2] = (await service.send([
             {
