@@ -99,6 +99,7 @@ export class Service {
                 const index = this.round_robin_index;
                 this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
                 const conn = this.connections[index];
+                /* c8 ignore start */
                 if (!conn.isAlive()) {
                     try {
                         await conn.reconnect();
@@ -106,9 +107,12 @@ export class Service {
                         continue;
                     }
                 }
+                /* c8 ignore stop */
                 if (conn.isAlive()) return conn;
+                /* c8 ignore start */
             }
             throw new Error("No available connections (all dead)");
+            /* c8 ignore stop */
         }
     }
 

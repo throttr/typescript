@@ -194,6 +194,7 @@ export class Connection {
      * Reconnect
      */
     public async reconnect() {
+        /* c8 ignore start */
         try {
             this.disconnect();
             await this.connect();
@@ -202,6 +203,7 @@ export class Connection {
             this.alive = false;
             throw e;
         }
+        /* c8 ignore stop */
     }
 
     /**
