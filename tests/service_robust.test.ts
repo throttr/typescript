@@ -26,7 +26,7 @@ import {
 import { expect } from 'vitest';
 import { GetResponse } from '../src';
 
-describe('Service', () => {
+describe('Service Robust', () => {
     let service: Service;
 
     beforeAll(async () => {
@@ -43,6 +43,7 @@ describe('Service', () => {
             host: '127.0.0.1',
             port: 9000,
             value_size: value_size,
+            operation_strategy: 'robust',
         });
         await service.connect();
     });

@@ -95,7 +95,7 @@ export class Service {
             this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
             return conn;
         } else {
-            for (let i = 0; i < this.connections.length; i++) {
+            for (let i = 0; i < this.connections.length; i++) { // NOSONAR Note: Round robin explicit
                 const index = this.round_robin_index;
                 this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
                 const conn = this.connections[index];
