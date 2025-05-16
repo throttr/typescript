@@ -36,6 +36,11 @@ export interface Configuration {
      * Maximum connections
      */
     max_connections?: number;
+
+    /**
+     * Operation strategy
+     */
+    operation_strategy?: 'raw' | 'robust';
 }
 
 /**

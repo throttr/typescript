@@ -47,6 +47,7 @@ export class Service {
      */
     constructor(config: Configuration) {
         this.config = {
+            operation_strategy: 'raw',
             max_connections: 1,
             ...config,
         };
@@ -78,7 +79,9 @@ export class Service {
             throw new Error('No available connections.');
         }
         /* c8 ignore stop */
-        return this.getConnection().send(request);
+
+        const connection = await this.getConnection();
+        return connection.send(request);
     }
 
     /**
@@ -86,10 +89,27 @@ export class Service {
      *
      * @private
      */
-    private getConnection(): Connection {
-        const conn = this.connections[this.round_robin_index];
-        this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
-        return conn;
+    private async getConnection(): Promise<Connection> {
+        if (this.config.operation_strategy === 'raw') {
+            const conn = this.connections[this.round_robin_index];
+            this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
+            return conn;
+        } else {
+            for (let i = 0; i < this.connections.length; i++) {
+                const index = this.round_robin_index;
+                this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
+                const conn = this.connections[index];
+                if (!conn.isAlive()) {
+                    try {
+                        await conn.reconnect();
+                    } catch {
+                        continue;
+                    }
+                }
+                if (conn.isAlive()) return conn;
+            }
+            throw new Error("No available connections (all dead)");
+        }
     }
 
     /**

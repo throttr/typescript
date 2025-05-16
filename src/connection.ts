@@ -65,6 +65,13 @@ export class Connection {
     private buffer: Buffer = Buffer.alloc(0);
 
     /**
+     * Alive
+     *
+     * @private
+     */
+    private alive: boolean = false;
+
+    /**
      * Constructor
      *
      * @param host
@@ -93,6 +100,8 @@ export class Connection {
             this.socket.connect(this.port, this.host, () => {
                 this.socket.on('data', chunk => this.onData(chunk));
                 this.socket.on('error', error => this.onError(error));
+
+                this.alive = true;
 
                 resolve();
             });
@@ -179,6 +188,27 @@ export class Connection {
      */
     private onData(chunk: Buffer) {
         setImmediate(() => this.processPendingResponses(chunk));
+    }
+
+    /**
+     * Reconnect
+     */
+    public async reconnect() {
+        try {
+            this.disconnect();
+            await this.connect();
+            this.alive = true;
+        } catch (e) {
+            this.alive = false;
+            throw e;
+        }
+    }
+
+    /**
+     * Is alive
+     */
+    public isAlive() {
+        return this.alive && !this.socket.destroyed;
     }
 
     /**
