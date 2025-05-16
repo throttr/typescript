@@ -44,6 +44,7 @@ describe('Service Robust', () => {
             port: 9000,
             value_size: value_size,
             operation_strategy: 'robust',
+            max_connections: 10,
         });
         await service.connect();
     });
@@ -371,7 +372,7 @@ describe('Service Robust', () => {
     });
 
     it('should set and get values from the memory', async () => {
-        const key = 'in-memory';
+        const key = 'in-memory-robust';
 
         // After that we're going to set something in memory
 
@@ -425,8 +426,8 @@ describe('Service Robust', () => {
 
         await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
-        const key1 = 'batch-key-1';
-        const key2 = 'batch-key-2';
+        const key1 = 'batch-key-1-robust';
+        const key2 = 'batch-key-2-robust';
 
         const [res1, res2] = (await service.send([
             {

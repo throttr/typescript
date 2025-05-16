@@ -43,6 +43,7 @@ describe('Service', () => {
             host: '127.0.0.1',
             port: 9000,
             value_size: value_size,
+            max_connections: 10,
         });
         await service.connect();
     });
@@ -54,7 +55,7 @@ describe('Service', () => {
     const flexNumber = (bigInt: boolean, number: number) => (bigInt ? BigInt(number) : number); // NOSONAR
 
     it('it should be compatible with throttr server', async () => {
-        const key = '333333';
+        const key = '7777777';
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
         await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
