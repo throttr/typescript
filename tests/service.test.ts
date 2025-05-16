@@ -43,7 +43,7 @@ describe('Service', () => {
             host: '127.0.0.1',
             port: 9000,
             value_size: value_size,
-            max_connections: 10,
+            max_connections: 3,
         });
         await service.connect();
     });
