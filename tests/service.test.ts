@@ -22,9 +22,9 @@ import {
     StatusResponse,
     TTLType,
     ValueSize,
+    GetResponse,
 } from '../src';
 import { expect } from 'vitest';
-import { GetResponse } from '../src';
 
 describe('Service', () => {
     let service: Service;
