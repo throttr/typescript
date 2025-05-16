@@ -115,6 +115,12 @@ export class Connection {
             let remaining = requests.length;
             let failed = false;
 
+            /* c8 ignore start */
+            if (!this.socket.writable) {
+                reject(new Error("Socket isn't writable"));
+            }
+            /* c8 ignore stop */
+
             buffers.forEach((buffer, index) => {
                 this.queue.push({
                     buffer: buffer,
@@ -140,8 +146,29 @@ export class Connection {
                 });
             });
 
-            this.socket.write(Buffer.concat(buffers));
+            this.socket.write(Buffer.concat(buffers), error => {
+                /* c8 ignore start */
+                if (error) {
+                    this.flushQueue(error);
+                }
+                /* c8 ignore stop */
+            });
         });
+    }
+
+    /**
+     * Flush queue
+     *
+     * @param error
+     * @private
+     */
+    private flushQueue(error: Error) {
+        /* c8 ignore start */
+        while (this.queue.length > 0) {
+            const current = this.queue.shift()!;
+            current.reject(error);
+        }
+        /* c8 ignore stop */
     }
 
     /**
@@ -289,10 +316,7 @@ export class Connection {
      */
     /* c8 ignore start */
     private onError(error: Error) {
-        if (this.queue.length > 0) {
-            const current = this.queue.shift()!;
-            current.reject(error);
-        }
+        this.flushQueue(error);
     }
     /* c8 ignore stop */
 
@@ -301,6 +325,7 @@ export class Connection {
      */
     disconnect() {
         this.socket.removeAllListeners();
+        this.flushQueue(new Error('Socket has been manually closed'));
         this.socket.end();
     }
 }
