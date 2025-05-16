@@ -203,8 +203,8 @@ export class Connection {
             this.alive = false;
             throw e;
         }
-        /* c8 ignore stop */
     }
+    /* c8 ignore stop */
 
     /**
      * Is alive

@@ -112,8 +112,8 @@ export class Service {
                 /* c8 ignore start */
             }
             throw new Error("No available connections (all dead)");
-            /* c8 ignore stop */
         }
+        /* c8 ignore stop */
     }
 
     /**
