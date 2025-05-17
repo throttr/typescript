@@ -208,6 +208,7 @@ export class Connection {
             });
 
             // Let's write
+            console.log(new Date().toString(), "WRITE > ", Buffer.concat(buffers).toString('hex'))
             this.socket.write(Buffer.concat(buffers), error => {
                 // If something goes wrong, again, by any external condition ...
                 if (error) {
@@ -246,6 +247,7 @@ export class Connection {
      */
     private onData(chunk: Buffer) {
         // This protects processing concurrent of responses
+        console.log(new Date().toString(), "READ < ", chunk.toString('hex'))
         setImmediate(() => this.processPendingResponses(chunk));
     }
 
