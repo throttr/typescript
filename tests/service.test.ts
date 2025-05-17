@@ -382,7 +382,7 @@ describe('Service', () => {
 
         expect(exists_query.success).toBe(false);
 
-        service.disconnect();
+        await service.disconnect();
     });
 
     it('should set and get values from the memory', async () => {
@@ -402,6 +402,7 @@ describe('Service', () => {
         expect(set.success).toBe(true);
 
         // After that we're going to get that key ...
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const get = (await service.send({
             type: RequestType.Get,
@@ -413,6 +414,7 @@ describe('Service', () => {
         expect(get.value).toBe('EHLO');
 
         // After that we're going to purge the key ...
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -426,6 +428,7 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to check if key has been purged ...
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const check = (await service.send({
             type: RequestType.Get,
@@ -435,7 +438,7 @@ describe('Service', () => {
         expect(typeof check.success).toBe('boolean');
         expect(check.success).toBe(false);
 
-        service.disconnect();
+        await service.disconnect();
     });
 
     it('should insert and query multiple keys in a single batch write', async () => {
@@ -488,6 +491,6 @@ describe('Service', () => {
         expect(query2.ttl_type).toBe(TTLType.Seconds);
         expect(query2.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
 
-        service.disconnect();
+        await service.disconnect();
     });
 });

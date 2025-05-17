@@ -123,9 +123,9 @@ export class Service {
     /**
      * Disconnect
      */
-    disconnect() {
+    async disconnect() {
         for (const conn of this.connections) {
-            conn.disconnect();
+            await conn.disconnect();
         }
     }
 }

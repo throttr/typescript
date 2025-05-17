@@ -465,10 +465,17 @@ export class Connection {
     /**
      * Disconnect
      */
-    disconnect() {
-        this.socket.removeAllListeners();
-        this.socket.end(() => {
-            this.flushQueue(new Error('Socket has been manually closed'));
+    async disconnect() : Promise<void> {
+        return new Promise((resolve, reject) => {
+            try {
+                this.socket.removeAllListeners();
+                this.socket.end(() => {
+                    this.flushQueue(new Error('Socket has been manually closed'));
+                    resolve()
+                });
+            } catch (e) {
+                reject(e);
+            }
         });
     }
 }
