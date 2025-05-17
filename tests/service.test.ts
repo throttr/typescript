@@ -48,7 +48,8 @@ describe('Service', () => {
         await service.connect();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
         service.disconnect();
     });
 
