@@ -441,12 +441,14 @@ export class Connection {
     ): { offset: number } {
         try {
             const response = ParseResponse(slice, type, this.config.value_size);
+            console.log(new Date().toString(), "Response", response);
             current.resolve(response);
         } catch (e) {
             // This catch require parse a malformed response.
             // Basically the server never respond malformed.
             // In order to test this we need create a valid connection.
             // And directly invoke this method.
+            console.log(new Date().toString(), "Rejected response", slice.toString('hex'));
             current.reject(e);
         }
         // Anyway, we return the new offset to be used.
