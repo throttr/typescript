@@ -29,7 +29,7 @@ import { expect } from 'vitest';
 describe('Service', () => {
     let service: Service;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         const size = process.env.THROTTR_SIZE ?? 'uint16';
 
         const value_size: ValueSize = {
@@ -48,7 +48,7 @@ describe('Service', () => {
         await service.connect();
     });
 
-    afterAll(() => {
+    afterEach(() => {
         service.disconnect();
     });
 
