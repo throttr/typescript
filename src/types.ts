@@ -14,6 +14,21 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 /**
+ * Connection configuration
+ */
+export interface ConnectionConfiguration {
+    /**
+     * On wait for writable socket attempts
+     */
+    on_wait_for_writable_socket_attempts?: number;
+
+    /**
+     * On wait for writable socket timeout per attempt
+     */
+    on_wait_for_writable_socket_timeout_per_attempt?: number;
+}
+
+/**
  * Configuration
  */
 export interface Configuration {
@@ -41,6 +56,11 @@ export interface Configuration {
      * Operation strategy
      */
     operation_strategy?: 'raw' | 'robust';
+
+    /**
+     * Connection configuration
+     */
+    connection_configuration?: ConnectionConfiguration;
 }
 
 /**

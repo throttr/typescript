@@ -49,6 +49,10 @@ export class Service {
         this.config = {
             operation_strategy: 'raw',
             max_connections: 1,
+            connection_configuration: {
+              on_wait_for_writable_socket_attempts: 3,
+              on_wait_for_writable_socket_timeout_per_attempt: 1000,
+            },
             ...config,
         };
     }
@@ -60,7 +64,7 @@ export class Service {
         /* c8 ignore next */
         const max_connections = this.config.max_connections ?? 1;
         for (let i = 0; i < max_connections; i++) {
-            const conn = new Connection(this.config.host, this.config.port, this.config.value_size);
+            const conn = new Connection(this.config);
             await conn.connect();
             this.connections.push(conn);
         }
