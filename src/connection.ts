@@ -164,8 +164,6 @@ export class Connection {
         return new Promise((resolve, reject) => {
             // We gonna to define an array of responses
             const responses: Response[] = [];
-            // We're going to need to define a counter to reduce per request.
-            let remaining = requests.length;
 
             // Imagine that your socket for external reasons has been destroyed, errored, or ended.
             // We can't process this request, at least, this socket can't. This will be reported.
@@ -187,8 +185,7 @@ export class Connection {
                     resolve: (response: Response) => { // We're going to create a handler to be used on resolve.
                         // As response was resolved.
                         responses[index] = response; // We're going to push that response in the array
-                        remaining--; // We need to decrease the counter.
-                        if (remaining === 0) { // If there are no pending, it's the only one or the last.
+                        if (responses.length === requests.length) { // If we have the same responses as requests then resolve.
                             // Finally, if we reach this point, we have all the responses so we can resolve.
                             resolve(
                                 // If the request was a batch then return the response batch.

@@ -204,7 +204,6 @@ describe('Service', () => {
         expect(success_increase_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
-
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const increased_quota_query = (await service.send({
