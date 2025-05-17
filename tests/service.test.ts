@@ -356,10 +356,14 @@ describe('Service', () => {
 
         // After that we're going to query to see if key exists ...
 
+        console.log("Waiting for query")
+
         const exists_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as QueryResponse;
+
+        console.log("Query exists", exists_query)
 
         expect(typeof exists_query.success).toBe('boolean');
         expect(typeof exists_query.quota).toMatch(/number|bigint/);
