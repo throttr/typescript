@@ -157,6 +157,10 @@ export class Connection {
      */
     send(request: Request | Request[]): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
+
+
+        requests.forEach((item, index) => console.log("Request:", index, item));
+
         const buffers = requests.map(req => BuildRequest(req, this.config.value_size));
 
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
