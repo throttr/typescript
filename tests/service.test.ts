@@ -26,39 +26,40 @@ import {
 } from '../src';
 import { expect } from 'vitest';
 
+
+const prepareService = async ()=> {
+    const size = process.env.THROTTR_SIZE ?? 'uint16';
+
+    const value_size: ValueSize = {
+        uint8: ValueSize.UInt8,
+        uint16: ValueSize.UInt16,
+        uint32: ValueSize.UInt32,
+        uint64: ValueSize.UInt64,
+    }[size] as ValueSize;
+
+    let service: Service = new Service({
+        host: '127.0.0.1',
+        port: 9000,
+        value_size: value_size,
+        max_connections: 2,
+    });
+    
+    await service.connect();
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
+
+    return service;
+}
+
+
 describe('Service', () => {
-    let service: Service;
-
-    beforeEach(async () => {
-        const size = process.env.THROTTR_SIZE ?? 'uint16';
-
-        const value_size: ValueSize = {
-            uint8: ValueSize.UInt8,
-            uint16: ValueSize.UInt16,
-            uint32: ValueSize.UInt32,
-            uint64: ValueSize.UInt64,
-        }[size] as ValueSize;
-
-        service = new Service({
-            host: '127.0.0.1',
-            port: 9000,
-            value_size: value_size,
-            max_connections: 2,
-        });
-        await service.connect();
-    });
-
-    afterEach(async () => {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
-        service.disconnect();
-    });
 
     const flexNumber = (bigInt: boolean, number: number) => (bigInt ? BigInt(number) : number); // NOSONAR
 
     it('it should be compatible with throttr server', async () => {
+        const service = await prepareService();
         const key = '7777777';
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
         // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
 
@@ -373,9 +374,12 @@ describe('Service', () => {
         // And that should fail ...
 
         expect(exists_query.success).toBe(false);
+
+        service.disconnect();
     });
 
     it('should set and get values from the memory', async () => {
+        const service = await prepareService();
         const key = 'in-memory';
 
         // After that we're going to set something in memory
@@ -423,12 +427,13 @@ describe('Service', () => {
 
         expect(typeof check.success).toBe('boolean');
         expect(check.success).toBe(false);
+
+        service.disconnect();
     });
 
     it('should insert and query multiple keys in a single batch write', async () => {
+        const service = await prepareService();
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
-
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
         const key1 = 'batch-key-1';
         const key2 = 'batch-key-2';
@@ -473,5 +478,7 @@ describe('Service', () => {
         expect(query2.quota).toBe(flexNumber(isBigInt, 9));
         expect(query2.ttl_type).toBe(TTLType.Seconds);
         expect(query2.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
+
+        service.disconnect();
     });
 });
