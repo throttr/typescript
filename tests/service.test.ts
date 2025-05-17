@@ -43,7 +43,7 @@ const prepareService = async ()=> {
         value_size: value_size,
         max_connections: 2,
     });
-    
+
     await service.connect();
 
     await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
@@ -165,6 +165,8 @@ describe('Service', () => {
 
         expect(success_patch_update.success).toBe(true);
 
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // After that we're going to query to see how much "Quota" we have ...
 
         const patched_quota_query = (await service.send({
@@ -203,6 +205,8 @@ describe('Service', () => {
 
         // After that we're going to query to see how much "Quota" we have ...
 
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const increased_quota_query = (await service.send({
             type: RequestType.Query,
             key: key,
@@ -238,6 +242,8 @@ describe('Service', () => {
         expect(success_increase_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const increased_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -275,6 +281,8 @@ describe('Service', () => {
 
         // After that we're going to query to see how much "TTL" we have ...
 
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         const decrease_ttl_query = (await service.send({
             type: RequestType.Query,
             key: key,
@@ -310,6 +318,8 @@ describe('Service', () => {
         expect(success_patch_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const patch_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -356,15 +366,12 @@ describe('Service', () => {
         expect(failed_purge.success).toBe(false);
 
         // After that we're going to query to see if key exists ...
-
-        console.log("Waiting for query")
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const exists_query = (await service.send({
             type: RequestType.Query,
             key: key,
         })) as QueryResponse;
-
-        console.log("Query exists", exists_query)
 
         expect(typeof exists_query.success).toBe('boolean');
         expect(typeof exists_query.quota).toMatch(/number|bigint/);
@@ -454,6 +461,8 @@ describe('Service', () => {
                 ttl: flexNumber(isBigInt, 30),
             },
         ])) as StatusResponse[];
+
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);
