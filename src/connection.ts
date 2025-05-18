@@ -14,7 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import {Request, Response, ResponseType, QueuedRequest, ValueSize, Configuration} from './types';
+import {Request, Response, ResponseType, QueuedRequest, Configuration} from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 import { read } from './utils';
 
@@ -62,7 +62,7 @@ export class Connection {
      *
      * @private
      */
-    private config: Configuration;
+    private readonly config: Configuration;
 
     /**
      * Constructor
@@ -463,7 +463,7 @@ export class Connection {
                     resolve()
                 });
             } catch (e) {
-                reject(e);
+                reject(new Error("Something went wrong during disconnect"));
             }
         });
     }
