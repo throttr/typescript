@@ -129,24 +129,17 @@ export class Connection {
         // Per attempt, you'll be waiting for Y ms.
         const timeout_per_attempt = this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 1000;
 
-        // On alive reported connection but not writable socket and not reached the max attempts
-        if (this.alive &&
+        if (this.alive && this.socket.writable) {
+            resolve()
+        } else if (this.alive &&
             !this.socket.writable &&
             this.wait_for_writable_socket_attempts <= max_attempts) {
-            // Wait for
             setTimeout(() => {
                 this.waitUntilReachConnectedStatus(resolve, reject);
             }, timeout_per_attempt);
-            // Increase the attempts
             this.wait_for_writable_socket_attempts++;
         } else {
-            // Otherwise
-            // If is alive and socket is writable
-            if (this.alive && this.socket.writable) {
-                resolve();
-            } else {
-                reject();
-            }
+            reject()
         }
     }
 
