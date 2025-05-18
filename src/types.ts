@@ -165,12 +165,12 @@ export enum AttributeType {
     /**
      * Quota
      */
-    Quota = 0,
+    Quota = 0x00,
 
     /**
      * TTL
      */
-    TTL = 1,
+    TTL = 0x01,
 }
 
 /**
@@ -180,17 +180,17 @@ export enum ChangeType {
     /**
      * Patch
      */
-    Patch = 0,
+    Patch = 0x00,
 
     /**
      * Increase
      */
-    Increase = 1,
+    Increase = 0x01,
 
     /**
      * Decrease
      */
-    Decrease = 2,
+    Decrease = 0x02,
 }
 
 /**
