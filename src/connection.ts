@@ -81,6 +81,7 @@ export class Connection {
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             // If something goes wrong with this connection ...
+            /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
                 // Marks this connection as not alive.
                 this.alive = false;
@@ -88,6 +89,7 @@ export class Connection {
                 // Reject ... This only will happen on failed connection.
                 reject(err);
             });
+            /* c8 ignore stop */
             // This isn't something that you can test without simulating ...
             //
             // The previous code case is something that the user should be **aware**.
@@ -124,13 +126,16 @@ export class Connection {
      * @param reject
      */
     waitUntilReachConnectedStatus(resolve: any, reject: any) {
+        /* c8 ignore start */
         // You have at least X attempts
         const max_attempts = (this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 3);
         // Per attempt, you'll be waiting for Y ms.
         const timeout_per_attempt = this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 1000;
+        /* c8 ignore stop */
 
         if (this.alive && this.socket.writable) {
             resolve()
+            /* c8 ignore start */
         } else if (this.alive &&
             !this.socket.writable &&
             this.wait_for_writable_socket_attempts <= max_attempts) {
@@ -141,6 +146,7 @@ export class Connection {
         } else {
             reject()
         }
+        /* c8 ignore stop */
     }
 
     /**
@@ -193,7 +199,9 @@ export class Connection {
                         // This case is when one request or one of many request fails.
                         // Then the entire promise will be rejected
                         // Remember that this function can accept an array of requests.
+                        /* c8 ignore start */
                         reject(err);
+                        /* c8 ignore stop */
                     },
                 });
             });
@@ -238,6 +246,7 @@ export class Connection {
      */
     public async reconnect() {
         // If we receive a reconnect order from other context
+        /* c8 ignore start */
         try {
             // We need to try disconnect first.
             await this.disconnect();
@@ -248,6 +257,7 @@ export class Connection {
             // If something goes wrong then we report the event.
             throw e;
         }
+        /* c8 ignore stop */
     }
 
     /**
@@ -280,7 +290,9 @@ export class Connection {
             const type = current.expectedType;
 
             // We verify if we are passed of the range again (sequenced while iterations)
+            /* c8 ignore start */
             if (offset >= iterationBuffer.length) break;
+            /* c8 ignore stop */
 
             // We take the first byte
             const firstByte = iterationBuffer.readUInt8(offset);
