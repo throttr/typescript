@@ -158,9 +158,6 @@ export class Connection {
     send(request: Request | Request[]): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
 
-        this.socket.cork();
-
-
         requests.forEach((item, index) => console.log("Request:", index, item));
 
         const buffers = requests.map(req => BuildRequest(req, this.config.value_size));
@@ -264,7 +261,7 @@ export class Connection {
         // If we receive a reconnect order from other context
         try {
             // We need to try disconnect first.
-            this.disconnect();
+            await this.disconnect();
             // And try to reconnect again.
             await this.connect();
         } catch (e) {
