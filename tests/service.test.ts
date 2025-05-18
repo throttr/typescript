@@ -248,8 +248,6 @@ describe('Service', () => {
         expect(success_increase_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
-
-        await new Promise(resolve => setTimeout(resolve, 500));
         await new Promise(resolve => setTimeout(resolve, 500));
 
         const increased_ttl_query = (await service.send({
@@ -502,6 +500,8 @@ describe('Service', () => {
         expect(query2.quota).toBe(flexNumber(isBigInt, 9));
         expect(query2.ttl_type).toBe(TTLType.Seconds);
         expect(query2.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
+
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         await service.disconnect();
     });

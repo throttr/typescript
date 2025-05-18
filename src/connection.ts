@@ -237,8 +237,7 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
-        // This protects processing concurrent of responses
-        setImmediate(() => this.processPendingResponses(chunk));
+        this.processPendingResponses(chunk)
     }
 
     /**
