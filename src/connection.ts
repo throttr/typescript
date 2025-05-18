@@ -209,20 +209,11 @@ export class Connection {
 
             // Let's write
             console.log(new Date().toString(), "WRITE > ", Buffer.concat(buffers).toString('hex'))
-            this.socket.write(Buffer.concat(buffers), error => {
-                // If something goes wrong, again, by any external condition ...
-                if (error) {
-                    // We need flush the queue ...
-                    console.log("Wasn't send")
-                    this.flushQueue(error);
-                    // This is relevant.
-                    // This means that if one send fail in one thread.
-                    // This can cancel all the others operations that are waiting for ...
-                    // So consider this as total cancellation signal.
-                } else {
-                    console.log("Was sent success")
-                }
-            });
+            this.socket.cork();
+            for (const buffer of buffers) {
+                this.socket.write(buffer);
+            }
+            process.nextTick(() => this.socket.uncork());
         });
     }
 
