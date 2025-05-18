@@ -26,40 +26,43 @@ import {
 } from '../src';
 import { expect } from 'vitest';
 
+
+const prepareService = async ()=> {
+    const size = process.env.THROTTR_SIZE ?? 'uint16';
+
+    const value_size: ValueSize = {
+        uint8: ValueSize.UInt8,
+        uint16: ValueSize.UInt16,
+        uint32: ValueSize.UInt32,
+        uint64: ValueSize.UInt64,
+    }[size] as ValueSize;
+
+    let service: Service = new Service({
+        host: '127.0.0.1',
+        port: 9000,
+        value_size: value_size,
+        max_connections: 2,
+    });
+
+    await service.connect();
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
+
+    return service;
+}
+
+
 describe('Service', () => {
-    let service: Service;
-
-    beforeAll(async () => {
-        const size = process.env.THROTTR_SIZE ?? 'uint16';
-
-        const value_size: ValueSize = {
-            uint8: ValueSize.UInt8,
-            uint16: ValueSize.UInt16,
-            uint32: ValueSize.UInt32,
-            uint64: ValueSize.UInt64,
-        }[size] as ValueSize;
-
-        service = new Service({
-            host: '127.0.0.1',
-            port: 9000,
-            value_size: value_size,
-            max_connections: 2,
-        });
-        await service.connect();
-    });
-
-    afterAll(() => {
-        service.disconnect();
-    });
 
     const flexNumber = (bigInt: boolean, number: number) => (bigInt ? BigInt(number) : number); // NOSONAR
 
     it('it should be compatible with throttr server', async () => {
+        const service = await prepareService();
         const key = '7777777';
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
 
         // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const insert = (await service.send({
             type: RequestType.Insert,
@@ -76,6 +79,7 @@ describe('Service', () => {
         expect(insert.success).toBe(true);
 
         // After that, we are going to make a QUERY to see what was stored ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const first_query = (await service.send({
             type: RequestType.Query,
@@ -96,6 +100,7 @@ describe('Service', () => {
         expect(first_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // Right now we will UPDATE the quota to zero using "decrease" operation ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -112,6 +117,7 @@ describe('Service', () => {
         expect(success_decrease_update.success).toBe(true);
 
         // After that we're going to check if we can "decrease" again ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const failed_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -128,6 +134,7 @@ describe('Service', () => {
         expect(failed_decrease_update.success).toBe(false);
 
         // After that we're going to query to see how much "Quota" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const empty_quota_query = (await service.send({
             type: RequestType.Query,
@@ -148,6 +155,7 @@ describe('Service', () => {
         expect(empty_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "patch" the "Quota" to 10 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_patch_update = (await service.send({
             type: RequestType.Update,
@@ -164,6 +172,7 @@ describe('Service', () => {
         expect(success_patch_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const patched_quota_query = (await service.send({
             type: RequestType.Query,
@@ -184,6 +193,7 @@ describe('Service', () => {
         expect(patched_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "increase" the "Quota" by 20 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_increase_update = (await service.send({
             type: RequestType.Update,
@@ -200,6 +210,7 @@ describe('Service', () => {
         expect(success_increase_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const increased_quota_query = (await service.send({
             type: RequestType.Query,
@@ -220,6 +231,7 @@ describe('Service', () => {
         expect(increased_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "increase" the "TTL" by 60 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_increase_ttl = (await service.send({
             type: RequestType.Update,
@@ -236,6 +248,7 @@ describe('Service', () => {
         expect(success_increase_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const increased_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -256,6 +269,7 @@ describe('Service', () => {
         expect(increased_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 120));
 
         // After that we're going to UPDATE to "decrease" the "TTL" by 60 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_decrease_ttl = (await service.send({
             type: RequestType.Update,
@@ -272,6 +286,7 @@ describe('Service', () => {
         expect(success_decrease_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const decrease_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -292,6 +307,7 @@ describe('Service', () => {
         expect(decrease_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "patch" the "TTL" to 90 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_patch_ttl = (await service.send({
             type: RequestType.Update,
@@ -308,6 +324,7 @@ describe('Service', () => {
         expect(success_patch_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const patch_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -328,6 +345,7 @@ describe('Service', () => {
         expect(patch_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 90));
 
         // After that we're going to purge the key ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -341,6 +359,7 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to try again ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const failed_purge = (await service.send({
             type: RequestType.Purge,
@@ -354,6 +373,7 @@ describe('Service', () => {
         expect(failed_purge.success).toBe(false);
 
         // After that we're going to query to see if key exists ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const exists_query = (await service.send({
             type: RequestType.Query,
@@ -368,12 +388,17 @@ describe('Service', () => {
         // And that should fail ...
 
         expect(exists_query.success).toBe(false);
+
+        await service.disconnect();
     });
 
     it('should set and get values from the memory', async () => {
+        const service = await prepareService();
+
         const key = 'in-memory';
 
         // After that we're going to set something in memory
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const set = (await service.send({
             type: RequestType.Set,
@@ -386,6 +411,7 @@ describe('Service', () => {
         expect(set.success).toBe(true);
 
         // After that we're going to get that key ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const get = (await service.send({
             type: RequestType.Get,
@@ -397,6 +423,7 @@ describe('Service', () => {
         expect(get.value).toBe('EHLO');
 
         // After that we're going to purge the key ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -410,6 +437,7 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to check if key has been purged ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const check = (await service.send({
             type: RequestType.Get,
@@ -418,12 +446,15 @@ describe('Service', () => {
 
         expect(typeof check.success).toBe('boolean');
         expect(check.success).toBe(false);
+
+        await service.disconnect();
     });
 
     it('should insert and query multiple keys in a single batch write', async () => {
+        const service = await prepareService();
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // NOSONAR
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const key1 = 'batch-key-1';
         const key2 = 'batch-key-2';
@@ -444,6 +475,8 @@ describe('Service', () => {
                 ttl: flexNumber(isBigInt, 30),
             },
         ])) as StatusResponse[];
+
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);
@@ -468,5 +501,9 @@ describe('Service', () => {
         expect(query2.quota).toBe(flexNumber(isBigInt, 9));
         expect(query2.ttl_type).toBe(TTLType.Seconds);
         expect(query2.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        await service.disconnect();
     });
 });

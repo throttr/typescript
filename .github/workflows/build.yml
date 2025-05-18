@@ -25,6 +25,12 @@ jobs:
               with:
                   node-version: '22'
 
+            - name: CPU Info
+              run: lscpu
+
+            - name: Dump container logs
+              run: docker logs $(docker ps -q --filter publish=9000)
+
             - name: Install Yarn
               run: |
                   npm install -g yarn

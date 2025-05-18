@@ -14,6 +14,21 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 /**
+ * Connection configuration
+ */
+export interface ConnectionConfiguration {
+    /**
+     * On wait for writable socket attempts
+     */
+    on_wait_for_writable_socket_attempts?: number;
+
+    /**
+     * On wait for writable socket timeout per attempt
+     */
+    on_wait_for_writable_socket_timeout_per_attempt?: number;
+}
+
+/**
  * Configuration
  */
 export interface Configuration {
@@ -38,9 +53,9 @@ export interface Configuration {
     max_connections?: number;
 
     /**
-     * Operation strategy
+     * Connection configuration
      */
-    operation_strategy?: 'raw' | 'robust';
+    connection_configuration?: ConnectionConfiguration;
 }
 
 /**
@@ -145,12 +160,12 @@ export enum AttributeType {
     /**
      * Quota
      */
-    Quota = 0,
+    Quota = 0x00,
 
     /**
      * TTL
      */
-    TTL = 1,
+    TTL = 0x01,
 }
 
 /**
@@ -160,17 +175,17 @@ export enum ChangeType {
     /**
      * Patch
      */
-    Patch = 0,
+    Patch = 0x00,
 
     /**
      * Increase
      */
-    Increase = 1,
+    Increase = 0x01,
 
     /**
      * Decrease
      */
-    Decrease = 2,
+    Decrease = 0x02,
 }
 
 /**

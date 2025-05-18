@@ -47,8 +47,11 @@ export class Service {
      */
     constructor(config: Configuration) {
         this.config = {
-            operation_strategy: 'raw',
             max_connections: 1,
+            connection_configuration: {
+              on_wait_for_writable_socket_attempts: 3,
+              on_wait_for_writable_socket_timeout_per_attempt: 1000,
+            },
             ...config,
         };
     }
@@ -60,7 +63,7 @@ export class Service {
         /* c8 ignore next */
         const max_connections = this.config.max_connections ?? 1;
         for (let i = 0; i < max_connections; i++) {
-            const conn = new Connection(this.config.host, this.config.port, this.config.value_size);
+            const conn = new Connection(this.config);
             await conn.connect();
             this.connections.push(conn);
         }
@@ -90,38 +93,32 @@ export class Service {
      * @private
      */
     private async getConnection(): Promise<Connection> {
-        if (this.config.operation_strategy === 'raw') {
-            const conn = this.connections[this.round_robin_index];
+        for (let i = 0; i < this.connections.length; i++) { // NOSONAR Note: Round robin explicit
+            const index = this.round_robin_index;
             this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
-            return conn;
-        } else {
-            for (let i = 0; i < this.connections.length; i++) { // NOSONAR Note: Round robin explicit
-                const index = this.round_robin_index;
-                this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
-                const conn = this.connections[index];
-                /* c8 ignore start */
-                if (!conn.isAlive()) {
-                    try {
-                        await conn.reconnect();
-                    } catch {
-                        continue;
-                    }
+            const conn = this.connections[index];
+            /* c8 ignore start */
+            if (!conn.isAlive()) {
+                try {
+                    await conn.reconnect();
+                } catch {
+                    continue;
                 }
-                /* c8 ignore stop */
-                if (conn.isAlive()) return conn;
-                /* c8 ignore start */
             }
-            throw new Error("No available connections (all dead)");
+            /* c8 ignore stop */
+            if (conn.isAlive()) return conn;
+            /* c8 ignore start */
         }
+        throw new Error("No available connections (all dead)");
         /* c8 ignore stop */
     }
 
     /**
      * Disconnect
      */
-    disconnect() {
+    async disconnect() {
         for (const conn of this.connections) {
-            conn.disconnect();
+            await conn.disconnect();
         }
     }
 }

@@ -14,7 +14,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import { Request, Response, ResponseType, QueuedRequest, ValueSize } from './types';
+import {Request, Response, ResponseType, QueuedRequest, Configuration} from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 import { read } from './utils';
 
@@ -28,27 +28,6 @@ export class Connection {
      * @private
      */
     private readonly socket: Socket;
-
-    /**
-     * Host
-     *
-     * @private
-     */
-    private readonly host: string;
-
-    /**
-     * Port
-     *
-     * @private
-     */
-    private readonly port: number;
-
-    /**
-     * Value size
-     *
-     * @private
-     */
-    private readonly value_size: ValueSize;
 
     /**
      * Queue
@@ -72,18 +51,28 @@ export class Connection {
     private alive: boolean = false;
 
     /**
+     * Wait for writable socket attempts
+     *
+     * @private
+     */
+    private wait_for_writable_socket_attempts: number = 0;
+
+    /**
+     * Configuration
+     *
+     * @private
+     */
+    private readonly config: Configuration;
+
+    /**
      * Constructor
      *
-     * @param host
-     * @param port
-     * @param value_size
+     * @param config
      */
-    constructor(host: string, port: number, value_size: ValueSize) {
-        this.host = host;
-        this.port = port;
-        this.value_size = value_size;
+    constructor(config: Configuration) {
+        this.config = config;
         this.socket = new Socket();
-        this.socket.setNoDelay(true);
+        this.socket.setNoDelay(true); // This is required as packets can be small and nagle algorithm can lock.
     }
 
     /**
@@ -91,21 +80,73 @@ export class Connection {
      */
     connect(): Promise<void> {
         return new Promise((resolve, reject) => {
+            // If something goes wrong with this connection ...
             /* c8 ignore start */
             this.socket.once('error', (err: Error) => {
+                // Marks this connection as not alive.
+                this.alive = false;
+
+                // Reject ... This only will happen on failed connection.
                 reject(err);
             });
             /* c8 ignore stop */
+            // This isn't something that you can test without simulating ...
+            //
+            // The previous code case is something that the user should be **aware**.
+            //
+            // I mean taking actions when you say "connect" but that never happens for external conditions:
+            //
+            // - Server is gone.
+            // - Unreachable address.
+            // - And more...
+            //
+            // Find info about the TCP errors on connection ...
 
-            this.socket.connect(this.port, this.host, () => {
+            // We are going to try to connect.
+            this.socket.connect(this.config.port, this.config.host, () => {
+
+                // We bind data event to the onData handler.
                 this.socket.on('data', chunk => this.onData(chunk));
+                // We bind error event to the OnError handler.
                 this.socket.on('error', error => this.onError(error));
 
+                // We mark this connection as alive.
                 this.alive = true;
 
-                resolve();
+                // We are going to wait until we have a writable socket.
+                this.waitUntilReachConnectedStatus(resolve, reject);
             });
         });
+    }
+
+    /**
+     * Wait until reach connected status
+     *
+     * @param resolve
+     * @param reject
+     */
+    waitUntilReachConnectedStatus(resolve: any, reject: any) {
+        /* c8 ignore start */
+        // You have at least X attempts
+        const max_attempts = (this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 3);
+        // Per attempt, you'll be waiting for Y ms.
+        const timeout_per_attempt = this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 1000;
+        /* c8 ignore stop */
+
+        if (this.alive && this.socket.writable) {
+            resolve()
+            /* c8 ignore start */
+        } else if (this.alive &&
+            !this.socket.writable &&
+            this.wait_for_writable_socket_attempts <= max_attempts) {
+            setTimeout(() => {
+                this.waitUntilReachConnectedStatus(resolve, reject);
+            }, timeout_per_attempt);
+            this.wait_for_writable_socket_attempts++;
+        } else {
+            reject()
+        }
+        /* c8 ignore stop */
     }
 
     /**
@@ -115,53 +156,62 @@ export class Connection {
      */
     send(request: Request | Request[]): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
-        const buffers = requests.map(req => BuildRequest(req, this.value_size));
+
+        const buffers = requests.map(req => BuildRequest(req, this.config.value_size));
 
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
         return new Promise((resolve, reject) => {
+            // We gonna to define an array of responses
             const responses: Response[] = [];
-            let remaining = requests.length;
-            let failed = false;
 
-            /* c8 ignore start */
+            // Imagine that your socket for external reasons has been destroyed, errored, or ended.
+            // We can't process this request, at least, this socket can't. This will be reported.
             if (!this.socket.writable) {
                 reject(new Error("Socket isn't writable"));
             }
-            /* c8 ignore stop */
+            // This code isn't easy to test without simulating ...
+            // I should create a test which exactly, during a set of test the socket has been gone.
+            // In one case, we could send FIN before this to test it.
+            // Anyway, this is something that the user must be **aware**.
 
+            // On every buffer (request binary serialized) ...
             buffers.forEach((buffer, index) => {
+
+                // We create an element on the requests queue.
                 this.queue.push({
-                    buffer: buffer,
-                    expectedType: expectedTypes[index],
-                    resolve: (response: Response) => {
-                        /* c8 ignore start */
-                        if (failed) return;
-                        /* c8 ignore stop */
-                        responses[index] = response;
-                        remaining--;
-                        if (remaining === 0) {
-                            resolve(Array.isArray(request) ? responses : responses[0]);
+                    buffer: buffer, // Saving his buffer.
+                    expectedType: expectedTypes[index], // The expected type based on request (status, query and get).
+                    resolve: (response: Response) => { // We're going to create a handler to be used on resolve.
+                        // As response was resolved.
+                        responses[index] = response; // We're going to push that response in the array
+                        if (responses.length === requests.length) { // If we have the same responses as requests then resolve.
+                            // Finally, if we reach this point, we have all the responses so we can resolve.
+                            resolve(
+                                // If the request was a batch then return the response batch.
+                                // If the request was only one then return the response.
+                                Array.isArray(request) ?
+                                    responses : responses[0]
+                            );
                         }
                     },
-                    /* c8 ignore start */
                     reject: (err: Error) => {
-                        if (!failed) {
-                            failed = true;
-                            reject(err);
-                        }
+                        // This case is when one request or one of many request fails.
+                        // Then the entire promise will be rejected
+                        // Remember that this function can accept an array of requests.
+                        /* c8 ignore start */
+                        reject(err);
+                        /* c8 ignore stop */
                     },
-                    /* c8 ignore stop */
                 });
             });
 
-            this.socket.write(Buffer.concat(buffers), error => {
-                /* c8 ignore start */
-                if (error) {
-                    this.flushQueue(error);
-                }
-                /* c8 ignore stop */
-            });
+            // Let's write
+            this.socket.cork();
+            for (const buffer of buffers) {
+                this.socket.write(buffer);
+            }
+            process.nextTick(() => this.socket.uncork());
         });
     }
 
@@ -172,12 +222,13 @@ export class Connection {
      * @private
      */
     private flushQueue(error: Error) {
-        /* c8 ignore start */
+        // In other to flush queue we need to have elements
         while (this.queue.length > 0) {
+            // We remove first one
             const current = this.queue.shift()!;
+            // And reject them.
             current.reject(error);
         }
-        /* c8 ignore stop */
     }
 
     /**
@@ -187,24 +238,27 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
-        setImmediate(() => this.processPendingResponses(chunk));
+        this.processPendingResponses(chunk)
     }
 
     /**
      * Reconnect
      */
     public async reconnect() {
+        // If we receive a reconnect order from other context
         /* c8 ignore start */
         try {
-            this.disconnect();
+            // We need to try disconnect first.
+            await this.disconnect();
+            // And try to reconnect again.
             await this.connect();
-            this.alive = true;
         } catch (e) {
             this.alive = false;
-            throw e; 
+            // If something goes wrong then we report the event.
+            throw e;
         }
+        /* c8 ignore stop */
     }
-    /* c8 ignore stop */
 
     /**
      * Is alive
@@ -219,32 +273,52 @@ export class Connection {
      * @private
      */
     private processPendingResponses(chunk: Buffer) {
+        // Imagine that you receive an un chuck of bytes.
+        // The current iteration will take the existing buffer and the new one, gluing it.
         const iterationBuffer = Buffer.concat([this.buffer, chunk]);
+        // We start from the offset zero
         let offset = 0;
 
+        // While something exists on the queue
+        // And the offset is in the iteration buffer range then...
         while (this.queue.length > 0 && offset < iterationBuffer.length) {
+
+            // We take the first request on the queue
             const current = this.queue[0];
+
+            // We take his expected type
             const type = current.expectedType;
 
+            // We verify if we are passed of the range again (sequenced while iterations)
+            /* c8 ignore start */
             if (offset >= iterationBuffer.length) break;
+            /* c8 ignore stop */
 
+            // We take the first byte
             const firstByte = iterationBuffer.readUInt8(offset);
             offset++;
 
+            // We try process and we pass
             const processed = this.tryHandleResponse(
-                type,
-                current,
-                iterationBuffer,
-                firstByte,
-                offset
+                type, // To know if we expect STATUS, QUERY or GET response.
+                current, // To eventually resolve the request
+                iterationBuffer, // To decode
+                firstByte, // To know if was success or failed
+                offset // The offset to be used as current index of the buffer
             );
-            /* c8 ignore next */
+
+            // If nothing was obtained we break the while
             if (!processed) break;
 
+            // If something was obtained then we have a new offset
             offset = processed.offset;
+
+            // We remove the element from the queue
             this.queue.shift();
         }
 
+        // If the chunk contain not completed responses
+        // We store the excedent.
         this.buffer = iterationBuffer.subarray(offset);
     }
 
@@ -265,43 +339,72 @@ export class Connection {
         firstByte: number,
         offset: number
     ): { offset: number } | false {
+
+
+        // If the response was STATUS
         if (type === 'status') {
+            // We take the byte on the offset
             const slice = buffer.subarray(offset - 1, offset);
+            // And parse
             return this.tryParse(slice, type, current, offset);
         }
 
+        // If the response is QUERY
         if (type === 'query') {
+            // And was failed then
             if (firstByte === 0x00) {
+                // It can be considered as STATUS response
                 const slice = buffer.subarray(offset - 1, offset);
+                // And parsed
                 return this.tryParse(slice, type, current, offset);
             }
 
-            const expectedLength = this.value_size * 2 + 2;
-            /* c8 ignore next */
+            // Otherwise we have more bytes to read
+            // Status + TTL + TTL Type + Quota
+            const expectedLength = this.config.value_size * 2 + 2;
+
+            // If the buffer is less than the expected value is this is an incomplete response
+            // And report this try handle response as failed.
             if (buffer.length < offset - 1 + expectedLength) return false;
 
+            // Otherwise we take the buffer completed
             const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
+            // And parse
             return this.tryParse(slice, type, current, offset - 1 + expectedLength);
-            /* c8 ignore start */
         }
 
+        // If the response is GET
         if (type === 'get') {
+            // And was failed then
             if (firstByte === 0x00) {
+                // It can be considered as STATUS response
                 const slice = buffer.subarray(offset - 1, offset);
+                // And parsed
                 return this.tryParse(slice, type, current, offset);
             }
 
-            const expectedLength = this.value_size * 2 + 2;
-            /* c8 ignore next */
+            // Otherwise we have more bytes to read
+            // Status + TTL + TTL Type + SizeOf(Value)
+            const expectedLength = this.config.value_size * 2 + 2;
+
+            // If the buffer is less than the expected value is this is an incomplete response
+            // And report this try handle response as failed.
             if (buffer.length < offset - 1 + expectedLength) return false;
 
-            const valueSize = read(buffer, 2 + this.value_size, this.value_size);
+            // Otherwise we take the value of the lasts 2 bytes as considered as SizeOf(Value)
+            const valueSize = read(buffer, 2 + this.config.value_size, this.config.value_size);
+
+            // If the buffer is less than the expected value plus SizeOf(Value) is this is an incomplete response
+            // And report this try handle response as failed.
             if (buffer.length < offset - 1 + expectedLength + Number(valueSize)) return false;
 
+            // Otherwise the take the buffer complete
             const slice = buffer.subarray(
                 offset - 1,
                 offset - 1 + expectedLength + Number(valueSize)
             );
+
+            // And parse
             return this.tryParse(
                 slice,
                 type,
@@ -323,20 +426,23 @@ export class Connection {
      * @param nextOffset
      * @private
      */
-    private tryParse(
+    public tryParse(
         slice: Buffer,
         type: ResponseType,
         current: QueuedRequest,
         nextOffset: number
     ): { offset: number } {
         try {
-            const response = ParseResponse(slice, type, this.value_size);
+            const response = ParseResponse(slice, type, this.config.value_size);
             current.resolve(response);
-            /* c8 ignore start */
         } catch (e) {
+            // This catch require parse a malformed response.
+            // Basically the server never respond malformed.
+            // In order to test this we need create a valid connection.
+            // And directly invoke this method.
             current.reject(e);
         }
-        /* c8 ignore stop */
+        // Anyway, we return the new offset to be used.
         return { offset: nextOffset };
     }
 
@@ -346,18 +452,20 @@ export class Connection {
      * @param error
      * @private
      */
-    /* c8 ignore start */
-    private onError(error: Error) {
+    private onError(error: Error) { // This function require external conditions to be tested
         this.flushQueue(error);
     }
-    /* c8 ignore stop */
 
     /**
      * Disconnect
      */
-    disconnect() {
-        this.socket.removeAllListeners();
-        this.flushQueue(new Error('Socket has been manually closed'));
-        this.socket.end();
+    async disconnect() : Promise<void> {
+        return new Promise((resolve) => {
+            this.socket.removeAllListeners();
+            this.socket.end(() => {
+                this.flushQueue(new Error('Socket has been manually closed'));
+                resolve()
+            });
+        });
     }
 }
