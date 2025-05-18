@@ -158,6 +158,8 @@ export class Connection {
     send(request: Request | Request[]): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
 
+        this.socket.cork();
+
 
         requests.forEach((item, index) => console.log("Request:", index, item));
 
@@ -214,11 +216,14 @@ export class Connection {
                 // If something goes wrong, again, by any external condition ...
                 if (error) {
                     // We need flush the queue ...
+                    console.log("Wasn't send")
                     this.flushQueue(error);
                     // This is relevant.
                     // This means that if one send fail in one thread.
                     // This can cancel all the others operations that are waiting for ...
                     // So consider this as total cancellation signal.
+                } else {
+                    console.log("Was sent success")
                 }
             });
         });
