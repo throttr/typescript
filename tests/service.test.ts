@@ -394,6 +394,7 @@ describe('Service', () => {
 
     it('should set and get values from the memory', async () => {
         const service = await prepareService();
+
         const key = 'in-memory';
 
         // After that we're going to set something in memory
