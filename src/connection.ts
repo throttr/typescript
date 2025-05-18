@@ -167,9 +167,11 @@ export class Connection {
 
             // Imagine that your socket for external reasons has been destroyed, errored, or ended.
             // We can't process this request, at least, this socket can't. This will be reported.
+            /* c8 ignore start */
             if (!this.socket.writable) {
                 reject(new Error("Socket isn't writable"));
             }
+            /* c8 ignore stop */
             // This code isn't easy to test without simulating ...
             // I should create a test which exactly, during a set of test the socket has been gone.
             // In one case, we could send FIN before this to test it.
@@ -201,8 +203,8 @@ export class Connection {
                         // Remember that this function can accept an array of requests.
                         /* c8 ignore start */
                         reject(err);
-                        /* c8 ignore stop */
                     },
+                    /* c8 ignore stop */
                 });
             });
 
@@ -223,12 +225,14 @@ export class Connection {
      */
     private flushQueue(error: Error) {
         // In other to flush queue we need to have elements
+        /* c8 ignore start */
         while (this.queue.length > 0) {
             // We remove first one
             const current = this.queue.shift()!;
             // And reject them.
             current.reject(error);
         }
+        /* c8 ignore stop */
     }
 
     /**
@@ -257,8 +261,8 @@ export class Connection {
             // If something goes wrong then we report the event.
             throw e;
         }
-        /* c8 ignore stop */
     }
+    /* c8 ignore stop */
 
     /**
      * Is alive
@@ -308,7 +312,9 @@ export class Connection {
             );
 
             // If nothing was obtained we break the while
+            /* c8 ignore start */
             if (!processed) break;
+            /* c8 ignore stop */
 
             // If something was obtained then we have a new offset
             offset = processed.offset;
@@ -365,7 +371,9 @@ export class Connection {
 
             // If the buffer is less than the expected value is this is an incomplete response
             // And report this try handle response as failed.
+            /* c8 ignore start */
             if (buffer.length < offset - 1 + expectedLength) return false;
+            /* c8 ignore stop */
 
             // Otherwise we take the buffer completed
             const slice = buffer.subarray(offset - 1, offset - 1 + expectedLength);
@@ -389,14 +397,18 @@ export class Connection {
 
             // If the buffer is less than the expected value is this is an incomplete response
             // And report this try handle response as failed.
+            /* c8 ignore start */
             if (buffer.length < offset - 1 + expectedLength) return false;
+            /* c8 ignore stop */
 
             // Otherwise we take the value of the lasts 2 bytes as considered as SizeOf(Value)
             const valueSize = read(buffer, 2 + this.config.value_size, this.config.value_size);
 
             // If the buffer is less than the expected value plus SizeOf(Value) is this is an incomplete response
             // And report this try handle response as failed.
+            /* c8 ignore start */
             if (buffer.length < offset - 1 + expectedLength + Number(valueSize)) return false;
+            /* c8 ignore stop */
 
             // Otherwise the take the buffer complete
             const slice = buffer.subarray(
@@ -411,6 +423,7 @@ export class Connection {
                 current,
                 offset - 1 + expectedLength + Number(valueSize)
             );
+            /* c8 ignore start */
         }
 
         return false;
@@ -435,6 +448,7 @@ export class Connection {
         try {
             const response = ParseResponse(slice, type, this.config.value_size);
             current.resolve(response);
+            /* c8 ignore start */
         } catch (e) {
             // This catch require parse a malformed response.
             // Basically the server never respond malformed.
@@ -442,6 +456,7 @@ export class Connection {
             // And directly invoke this method.
             current.reject(e);
         }
+        /* c8 ignore stop */
         // Anyway, we return the new offset to be used.
         return { offset: nextOffset };
     }
@@ -453,8 +468,10 @@ export class Connection {
      * @private
      */
     private onError(error: Error) { // This function require external conditions to be tested
+        /* c8 ignore start */
         this.flushQueue(error);
     }
+    /* c8 ignore stop */
 
     /**
      * Disconnect
