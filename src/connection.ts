@@ -164,7 +164,7 @@ export class Connection {
 
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             // We gonna to define an array of responses
             const responses: Response[] = [];
 
@@ -209,11 +209,10 @@ export class Connection {
 
             // Let's write
             console.log(new Date().toString(), "WRITE > ", Buffer.concat(buffers).toString('hex'))
-            this.socket.cork();
-            for (const buffer of buffers) {
-                this.socket.write(buffer);
+            const flushed = this.socket.write(Buffer.concat(buffers));
+            if (!flushed) {
+                await new Promise(resolve => this.socket.once('drain', resolve));
             }
-            process.nextTick(() => this.socket.uncork());
         });
     }
 
