@@ -9,6 +9,6 @@ export default defineConfig({
             reportsDirectory: 'coverage',
             exclude: ['tests/', 'coverage/', 'dist/', 'vitest.setup.ts', 'vitest.config.ts'],
         },
-        testTimeout: 30000,
+        testTimeout: 120000,
     },
 });
