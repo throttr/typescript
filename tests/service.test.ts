@@ -62,6 +62,7 @@ describe('Service', () => {
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
 
         // We are going to make a INSERT with 7 as "Quota" and 60 seconds of "TTL" ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const insert = (await service.send({
             type: RequestType.Insert,
@@ -78,6 +79,7 @@ describe('Service', () => {
         expect(insert.success).toBe(true);
 
         // After that, we are going to make a QUERY to see what was stored ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const first_query = (await service.send({
             type: RequestType.Query,
@@ -98,6 +100,7 @@ describe('Service', () => {
         expect(first_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // Right now we will UPDATE the quota to zero using "decrease" operation ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -114,6 +117,7 @@ describe('Service', () => {
         expect(success_decrease_update.success).toBe(true);
 
         // After that we're going to check if we can "decrease" again ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const failed_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -130,6 +134,7 @@ describe('Service', () => {
         expect(failed_decrease_update.success).toBe(false);
 
         // After that we're going to query to see how much "Quota" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const empty_quota_query = (await service.send({
             type: RequestType.Query,
@@ -150,6 +155,7 @@ describe('Service', () => {
         expect(empty_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "patch" the "Quota" to 10 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_patch_update = (await service.send({
             type: RequestType.Update,
@@ -166,6 +172,7 @@ describe('Service', () => {
         expect(success_patch_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const patched_quota_query = (await service.send({
             type: RequestType.Query,
@@ -186,6 +193,7 @@ describe('Service', () => {
         expect(patched_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "increase" the "Quota" by 20 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_increase_update = (await service.send({
             type: RequestType.Update,
@@ -202,6 +210,7 @@ describe('Service', () => {
         expect(success_increase_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const increased_quota_query = (await service.send({
             type: RequestType.Query,
@@ -222,6 +231,7 @@ describe('Service', () => {
         expect(increased_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "increase" the "TTL" by 60 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_increase_ttl = (await service.send({
             type: RequestType.Update,
@@ -239,6 +249,8 @@ describe('Service', () => {
 
         // After that we're going to query to see how much "TTL" we have ...
 
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const increased_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -259,6 +271,7 @@ describe('Service', () => {
         expect(increased_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 120));
 
         // After that we're going to UPDATE to "decrease" the "TTL" by 60 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_decrease_ttl = (await service.send({
             type: RequestType.Update,
@@ -275,6 +288,7 @@ describe('Service', () => {
         expect(success_decrease_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const decrease_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -295,6 +309,7 @@ describe('Service', () => {
         expect(decrease_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "patch" the "TTL" to 90 ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_patch_ttl = (await service.send({
             type: RequestType.Update,
@@ -311,6 +326,7 @@ describe('Service', () => {
         expect(success_patch_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const patch_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -331,6 +347,7 @@ describe('Service', () => {
         expect(patch_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 90));
 
         // After that we're going to purge the key ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -344,6 +361,7 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to try again ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const failed_purge = (await service.send({
             type: RequestType.Purge,
@@ -357,6 +375,7 @@ describe('Service', () => {
         expect(failed_purge.success).toBe(false);
 
         // After that we're going to query to see if key exists ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const exists_query = (await service.send({
             type: RequestType.Query,
@@ -380,6 +399,7 @@ describe('Service', () => {
         const key = 'in-memory';
 
         // After that we're going to set something in memory
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const set = (await service.send({
             type: RequestType.Set,
@@ -392,6 +412,7 @@ describe('Service', () => {
         expect(set.success).toBe(true);
 
         // After that we're going to get that key ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const get = (await service.send({
             type: RequestType.Get,
@@ -403,6 +424,7 @@ describe('Service', () => {
         expect(get.value).toBe('EHLO');
 
         // After that we're going to purge the key ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -416,6 +438,7 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to check if key has been purged ...
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const check = (await service.send({
             type: RequestType.Get,
@@ -432,6 +455,7 @@ describe('Service', () => {
         const service = await prepareService();
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
 
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const key1 = 'batch-key-1';
         const key2 = 'batch-key-2';
@@ -453,6 +477,7 @@ describe('Service', () => {
             },
         ])) as StatusResponse[];
 
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);

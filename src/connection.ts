@@ -158,13 +158,11 @@ export class Connection {
     send(request: Request | Request[]): Promise<Response | Response[]> {
         const requests = Array.isArray(request) ? request : [request];
 
-        requests.forEach((item, index) => console.log("Request:", index, item));
-
         const buffers = requests.map(req => BuildRequest(req, this.config.value_size));
 
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
             // We gonna to define an array of responses
             const responses: Response[] = [];
 
@@ -208,11 +206,11 @@ export class Connection {
             });
 
             // Let's write
-            console.log(new Date().toString(), "WRITE > ", Buffer.concat(buffers).toString('hex'))
-            const flushed = this.socket.write(Buffer.concat(buffers));
-            if (!flushed) {
-                await new Promise(resolve => this.socket.once('drain', resolve));
+            this.socket.cork();
+            for (const buffer of buffers) {
+                this.socket.write(buffer);
             }
+            process.nextTick(() => this.socket.uncork());
         });
     }
 
@@ -240,7 +238,6 @@ export class Connection {
      */
     private onData(chunk: Buffer) {
         // This protects processing concurrent of responses
-        console.log(new Date().toString(), "READ < ", chunk.toString('hex'))
         setImmediate(() => this.processPendingResponses(chunk));
     }
 
@@ -433,14 +430,12 @@ export class Connection {
     ): { offset: number } {
         try {
             const response = ParseResponse(slice, type, this.config.value_size);
-            console.log(new Date().toString(), "Response", response);
             current.resolve(response);
         } catch (e) {
             // This catch require parse a malformed response.
             // Basically the server never respond malformed.
             // In order to test this we need create a valid connection.
             // And directly invoke this method.
-            console.log(new Date().toString(), "Rejected response", slice.toString('hex'));
             current.reject(e);
         }
         // Anyway, we return the new offset to be used.

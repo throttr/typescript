@@ -32,7 +32,6 @@ import { read, writeOnRequest, writeByValue } from './utils';
  * @param value_size
  */
 export const BuildRequest = (request: Request, value_size: ValueSize): Buffer => {
-    console.log(new Date().toString(), "REQUEST = ", request.type.toString())
     switch (request.type) {
         case RequestType.Insert: {
             const keyBuffer = Buffer.from(request.key, 'utf-8');
