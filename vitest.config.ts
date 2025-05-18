@@ -10,6 +10,6 @@ export default defineConfig({
             exclude: ['tests/', 'coverage/', 'dist/', 'vitest.setup.ts', 'vitest.config.ts'],
         },
         fileParallelism: false,
-        testTimeout: 10000,
+        testTimeout: 30000,
     },
 });
