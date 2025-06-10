@@ -12,7 +12,7 @@ jobs:
 
         services:
             throttr:
-                image: ghcr.io/throttr/throttr:4.0.17-debug-${{ matrix.size }}
+                image: ghcr.io/throttr/throttr:5.0.5-debug-${{ matrix.size }}-AMD64-metrics-enabled
                 ports:
                     - 9000:9000
 
