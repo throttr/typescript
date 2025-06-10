@@ -59,6 +59,21 @@ export interface Configuration {
 }
 
 /**
+ * Key type
+ */
+export enum KeyType {
+    /**
+     * Counter
+     */
+    Counter = 0x00,
+
+    /**
+     * Buffer
+     */
+    Buffer = 0x01,
+}
+
+/**
  * Request type
  */
 export enum RequestType {
@@ -447,6 +462,13 @@ export interface SubscribeRequest {
      * Channel
      */
     channel: string;
+
+    /**
+     * Callback
+     *
+     * @param data
+     */
+    callback: (data: string) => void;
 }
 
 /**
@@ -576,18 +598,18 @@ export type Request =
     | PurgeRequest
     | UpdateRequest
     | SetRequest
-    | GetRequest //
-    | ListRequest //
-    | InfoRequest //
-    | StatRequest //
-    | StatsRequest //
-    | SubscribeRequest //
-    | UnsubscribeRequest //
-    | PublishRequest //
-    | ConnectionsRequest //
-    | ConnectionRequest //
-    | ChannelsRequest //
-    | ChannelRequest //
+    | GetRequest
+    | ListRequest // Done
+    | InfoRequest // Done
+    | StatRequest // Done
+    | StatsRequest // Done
+    | SubscribeRequest // Done
+    | UnsubscribeRequest // Done
+    | PublishRequest // Done
+    | ConnectionsRequest // Done
+    | ConnectionRequest // Done
+    | ChannelsRequest // Done
+    | ChannelRequest // Done
     | WhoAmIRequest //
     | EventRequest
 
@@ -652,14 +674,859 @@ export interface StatusResponse {
 }
 
 /**
+ * List item
+ */
+export interface ListItem {
+    /**
+     * Key
+     */
+    key: string;
+
+    /**
+     * Key length
+     */
+    key_length: number;
+
+    /**
+     * Key type
+     */
+    key_type: KeyType;
+
+    /**
+     * TTL type
+     */
+    ttl_type: TTLType;
+
+    /**
+     * Expires at
+     */
+    expires_at: number;
+
+    /**
+     * Bytes used
+     */
+    bytes_used: number;
+}
+
+/**
+ * List response
+ */
+export interface ListResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Keys
+     */
+    keys: Array<ListItem>;
+}
+
+/**
+ * Channel item
+ */
+export interface ChannelItem {
+    /**
+     * Key
+     */
+    channel: string;
+
+    /**
+     * Key length
+     */
+    channel_length: number;
+
+    /**
+     * Read bytes
+     */
+    read_bytes: number;
+
+    /**
+     * Write bytes
+     */
+    write_bytes: number;
+
+    /**
+     * Connections
+     */
+    connections: number;
+}
+
+/**
+ * Channels response
+ */
+export interface ChannelsResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Keys
+     */
+    channels: Array<ChannelItem>;
+}
+
+/**
+ * Info response
+ */
+export interface InfoResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Timestamp
+     */
+    timestamp: number;
+
+    /**
+     * Total requests
+     */
+    total_requests: number;
+
+    /**
+     * Total requests per minute
+     */
+    total_requests_per_minute: number;
+
+    /**
+     * Total insert requests
+     */
+    total_insert_requests: number;
+
+    /**
+     * Total insert requests per minute
+     */
+    total_insert_requests_per_minute: number;
+
+    /**
+     * Total query requests
+     */
+    total_query_requests: number;
+
+    /**
+     * Total query requests per minute
+     */
+    total_query_requests_per_minute: number;
+
+    /**
+     * Total update requests
+     */
+    total_update_requests: number;
+
+    /**
+     * Total update requests per minute
+     */
+    total_update_requests_per_minute: number;
+
+    /**
+     * Total purge requests
+     */
+    total_purge_requests: number;
+
+    /**
+     * Total purge requests per minute
+     */
+    total_purge_requests_per_minute: number;
+
+    /**
+     * Total get requests
+     */
+    total_get_requests: number;
+
+    /**
+     * Total get requests per minute
+     */
+    total_get_requests_per_minute: number;
+
+    /**
+     * Total set requests
+     */
+    total_set_requests: number;
+
+    /**
+     * Total set requests per minute
+     */
+    total_set_requests_per_minute: number;
+
+    /**
+     * Total list requests
+     */
+    total_list_requests: number;
+
+    /**
+     * Total list requests per minute
+     */
+    total_list_requests_per_minute: number;
+
+    /**
+     * Total info requests
+     */
+    total_info_requests: number;
+
+    /**
+     * Total info requests per minute
+     */
+    total_info_requests_per_minute: number;
+
+    /**
+     * Total stats requests
+     */
+    total_stats_requests: number;
+
+    /**
+     * Total stats requests per minute
+     */
+    total_stats_requests_per_minute: number;
+
+    /**
+     * Total stat requests
+     */
+    total_stat_requests: number;
+
+    /**
+     * Total stat requests per minute
+     */
+    total_stat_requests_per_minute: number;
+
+    /**
+     * Total subscribe requests
+     */
+    total_subscribe_requests: number;
+
+    /**
+     * Total subscribe requests per minute
+     */
+    total_subscribe_requests_per_minute: number;
+
+    /**
+     * Total unsubscribe requests
+     */
+    total_unsubscribe_requests: number;
+
+    /**
+     * Total unsubscribe requests per minute
+     */
+    total_unsubscribe_requests_per_minute: number;
+
+    /**
+     * Total publish requests
+     */
+    total_publish_requests: number;
+
+    /**
+     * Total publish requests per minute
+     */
+    total_publish_requests_per_minute: number;
+
+    /**
+     * Total channel requests
+     */
+    total_channel_requests: number;
+
+    /**
+     * Total channel requests per minute
+     */
+    total_channel_requests_per_minute: number;
+
+    /**
+     * Total channels requests
+     */
+    total_channels_requests: number;
+
+    /**
+     * Total channels requests per minute
+     */
+    total_channels_requests_per_minute: number;
+
+    /**
+     * Total whoami requests
+     */
+    total_whoami_requests: number;
+
+    /**
+     * Total whoami requests per minute
+     */
+    total_whoami_requests_per_minute: number;
+
+    /**
+     * Total connection requests
+     */
+    total_connection_requests: number;
+
+    /**
+     * Total connection requests per minute
+     */
+    total_connection_requests_per_minute: number;
+
+    /**
+     * Total connections requests
+     */
+    total_connections_requests: number;
+
+    /**
+     * Total connections requests per minute
+     */
+    total_connections_requests_per_minute: number;
+
+    /**
+     * Total read bytes
+     */
+    total_read_bytes: number;
+
+    /**
+     * Total read bytes
+     */
+    total_read_bytes_per_minute: number;
+
+    /**
+     * Total write bytes
+     */
+    total_write_bytes: number;
+
+    /**
+     * Total write bytes
+     */
+    total_write_bytes_per_minute: number;
+
+    /**
+     * Total keys
+     */
+    total_keys: number;
+
+    /**
+     * Total counters
+     */
+    total_counters: number;
+
+    /**
+     * Total buffers
+     */
+    total_buffers: number;
+
+    /**
+     * Total allocated bytes on counters
+     */
+    total_allocated_bytes_on_counters: number;
+
+    /**
+     * Total allocated bytes on buffers
+     */
+    total_allocated_bytes_on_buffers: number;
+
+    /**
+     * Total subscriptions
+     */
+    total_subscriptions: number;
+
+    /**
+     * Total channels
+     */
+    total_channels: number;
+
+    /**
+     * Startup timestamp
+     */
+    startup_timestamp: number;
+
+    /**
+     * Total connections
+     */
+    total_connections: number;
+
+    /**
+     * Version
+     */
+    version: string;
+}
+
+
+/**
+ * Stat response
+ */
+export interface StatResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Reads per minute
+     */
+    reads_per_minute: number;
+
+    /**
+     * Writes per minute
+     */
+    writes_per_minute: number;
+
+    /**
+     * Total reads
+     */
+    total_reads: number;
+
+    /**
+     * Total writes
+     */
+    total_writes: number;
+}
+
+export interface StatsItem {
+    /**
+     * Key
+     */
+    key: string;
+
+    /**
+     * Key length
+     */
+    key_length: number;
+
+    /**
+     * Reads per minute
+     */
+    reads_per_minute: number;
+
+    /**
+     * Writes per minute
+     */
+    writes_per_minute: number;
+
+    /**
+     * Total reads
+     */
+    total_reads: number;
+
+    /**
+     * Total writes
+     */
+    total_writes: number;
+}
+
+/**
+ * Stats response
+ */
+export interface StatsResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Keys
+     */
+    keys: Array<StatsItem>;
+}
+
+/**
+ * Connections Item
+ */
+export interface ConnectionsItem {
+    /**
+     * ID
+     */
+    id: string;
+
+    /**
+     * Type
+     */
+    type: number;
+
+    /**
+     * Type
+     */
+    kind: number;
+
+    /**
+     * IP Version
+     */
+    ip_version: number;
+
+    /**
+     * IP
+     */
+    ip: string;
+
+    /**
+     * Port
+     */
+    port: number;
+
+    /**
+     * Connected at
+     */
+    connected_at: number;
+
+    /**
+     * Read bytes
+     */
+    read_bytes: number;
+
+    /**
+     * Write bytes
+     */
+    write_bytes: number;
+
+    /**
+     * Published bytes
+     */
+    published_bytes: number;
+
+    /**
+     * Received bytes
+     */
+    received_bytes: number;
+
+    /**
+     * Allocated bytes
+     */
+    allocated_bytes: number;
+
+    /**
+     * Consumed bytes
+     */
+    consumed_bytes: number;
+
+    /**
+     * Insert requests
+     */
+    insert_requests: number;
+
+    /**
+     * Set requests
+     */
+    set_requests: number;
+
+    /**
+     * Query requests
+     */
+    query_requests: number;
+
+    /**
+     * Get requests
+     */
+    get_requests: number;
+
+    /**
+     * Update requests
+     */
+    update_requests: number;
+
+    /**
+     * Purge requests
+     */
+    purge_requests: number;
+
+    /**
+     * List requests
+     */
+    list_requests: number;
+
+    /**
+     * Info requests
+     */
+    info_requests: number;
+
+    /**
+     * Stat requests
+     */
+    stat_requests: number;
+
+    /**
+     * Stats requests
+     */
+    stats_requests: number;
+
+    /**
+     * Publish requests
+     */
+    publish_requests: number;
+
+    /**
+     * Subscribe requests
+     */
+    subscribe_requests: number;
+
+    /**
+     * Unsubscribe requests
+     */
+    unsubscribe_requests: number;
+
+    /**
+     * Connections requests
+     */
+    connections_requests: number;
+
+    /**
+     * Channels requests
+     */
+    channels_requests: number;
+
+    /**
+     * Channel requests
+     */
+    channel_requests: number;
+
+    /**
+     * WhoAmI requests
+     */
+    whoami_requests: number;
+}
+
+
+/**
+ * Connections response
+ */
+export interface ConnectionsResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Keys
+     */
+    connections: Array<ConnectionsItem>;
+}
+
+/**
+ * Connection response
+ */
+export interface ConnectionResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * ID
+     */
+    id: string;
+
+    /**
+     * Type
+     */
+    type: number;
+
+    /**
+     * Type
+     */
+    kind: number;
+
+    /**
+     * IP Version
+     */
+    ip_version: number;
+
+    /**
+     * IP
+     */
+    ip: string;
+
+    /**
+     * Port
+     */
+    port: number;
+
+    /**
+     * Connected at
+     */
+    connected_at: number;
+
+    /**
+     * Read bytes
+     */
+    read_bytes: number;
+
+    /**
+     * Write bytes
+     */
+    write_bytes: number;
+
+    /**
+     * Published bytes
+     */
+    published_bytes: number;
+
+    /**
+     * Received bytes
+     */
+    received_bytes: number;
+
+    /**
+     * Allocated bytes
+     */
+    allocated_bytes: number;
+
+    /**
+     * Consumed bytes
+     */
+    consumed_bytes: number;
+
+    /**
+     * Insert requests
+     */
+    insert_requests: number;
+
+    /**
+     * Set requests
+     */
+    set_requests: number;
+
+    /**
+     * Query requests
+     */
+    query_requests: number;
+
+    /**
+     * Get requests
+     */
+    get_requests: number;
+
+    /**
+     * Update requests
+     */
+    update_requests: number;
+
+    /**
+     * Purge requests
+     */
+    purge_requests: number;
+
+    /**
+     * List requests
+     */
+    list_requests: number;
+
+    /**
+     * Info requests
+     */
+    info_requests: number;
+
+    /**
+     * Stat requests
+     */
+    stat_requests: number;
+
+    /**
+     * Stats requests
+     */
+    stats_requests: number;
+
+    /**
+     * Publish requests
+     */
+    publish_requests: number;
+
+    /**
+     * Subscribe requests
+     */
+    subscribe_requests: number;
+
+    /**
+     * Unsubscribe requests
+     */
+    unsubscribe_requests: number;
+
+    /**
+     * Connections requests
+     */
+    connections_requests: number;
+
+    /**
+     * Channels requests
+     */
+    channels_requests: number;
+
+    /**
+     * Channel requests
+     */
+    channel_requests: number;
+
+    /**
+     * WhoAmI requests
+     */
+    whoami_requests: number;
+}
+
+/**
+ * Connections Item
+ */
+export interface ChannelConnectionItem {
+    /**
+     * ID
+     */
+    id: string;
+
+    /**
+     * Subscribed at
+     */
+    subscribed_at: number;
+
+    /**
+     * Read bytes
+     */
+    read_bytes: number;
+
+    /**
+     * Write bytes
+     */
+    write_bytes: number;
+}
+
+
+/**
+ * Channel response
+ */
+export interface ChannelResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * Keys
+     */
+    connections: Array<ChannelConnectionItem>;
+}
+
+/**
+ * Whoami response
+ */
+export interface WhoAmIResponse {
+    /**
+     * Success
+     */
+    success: boolean;
+
+    /**
+     * ID
+     */
+    id: string;
+}
+
+/**
  * Response types
  */
-export type ResponseType = 'status' | 'query' | 'get';
+export type ResponseType = 'status' | 'query' | 'get' | 'info' | 'list' | 'connections' | 'connection' | 'channel' | 'channels' | 'stat' | 'stats' | 'whoami';
 
 /**
  * Request
  */
-export type Response = StatusResponse | QueryResponse | GetResponse;
+export type Response = StatusResponse |
+    QueryResponse |
+    GetResponse |
+    StatResponse |
+    ListResponse |
+    InfoResponse |
+    StatsResponse |
+    ConnectionsResponse |
+    ConnectionResponse |
+    ChannelsResponse |
+    ChannelRequest;
 
 /**
  * Queued request
