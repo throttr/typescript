@@ -91,6 +91,71 @@ export enum RequestType {
      * Get
      */
     Get = 0x06,
+
+    /**
+     * List
+     */
+    List = 0x07,
+
+    /**
+     * Info
+     */
+    Info = 0x08,
+
+    /**
+     * Stat
+     */
+    Stat = 0x09,
+
+    /**
+     * Stats
+     */
+    Stats = 0x10,
+
+    /**
+     * Subscribe
+     */
+    Subscribe = 0x11,
+
+    /**
+     * Unsubscribe
+     */
+    Unsubscribe = 0x12,
+
+    /**
+     * Publish
+     */
+    Publish = 0x13,
+
+    /**
+     * Connections
+     */
+    Connections = 0x14,
+
+    /**
+     * Connection
+     */
+    Connection = 0x15,
+
+    /**
+     * Channels
+     */
+    Channels = 0x16,
+
+    /**
+     * Channel
+     */
+    Channel = 0x17,
+
+    /**
+     * WhoAmI ;)
+     */
+    WhoAmI = 0x18,
+
+    /**
+     * Event
+     */
+    Event = 0x19,
 }
 
 /**
@@ -324,6 +389,185 @@ export interface SetRequest {
 }
 
 /**
+ * List request
+ */
+export interface ListRequest {
+    /**
+     * Type
+     */
+    type: RequestType.List;
+}
+
+/**
+ * Info request
+ */
+export interface InfoRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Info;
+}
+
+/**
+ * Stat request
+ */
+export interface StatRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Stat;
+
+    /**
+     * Key
+     */
+    key: string;
+}
+
+
+/**
+ * Stats request
+ */
+export interface StatsRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Stats;
+}
+
+/**
+ * Subscribe request
+ */
+export interface SubscribeRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Subscribe;
+
+    /**
+     * Channel
+     */
+    channel: string;
+}
+
+/**
+ * Unsubscribe request
+ */
+export interface UnsubscribeRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Unsubscribe;
+
+    /**
+     * Channel
+     */
+    channel: string;
+}
+
+
+/**
+ * Publish request
+ */
+export interface PublishRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Publish;
+
+    /**
+     * Channel
+     */
+    channel: string;
+
+    /**
+     * Value
+     */
+    value: string;
+}
+
+/**
+ * Connections request
+ */
+export interface ConnectionsRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Connections;
+}
+
+/**
+ * Connection request
+ */
+export interface ConnectionRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Connection;
+
+    /**
+     * ID
+     */
+    id: string;
+}
+
+
+/**
+ * Channels request
+ */
+export interface ChannelsRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Channels;
+}
+
+/**
+ * Channels request
+ */
+export interface ChannelRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Channel;
+
+    /**
+     * Channel
+     */
+    channel: string;
+}
+
+/**
+ * WhoAmI request
+ */
+export interface WhoAmIRequest {
+    /**
+     * Type
+     */
+    type: RequestType.WhoAmI;
+}
+
+/**
+ * WhoAmI request
+ */
+export interface EventRequest {
+    /**
+     * Type
+     */
+    type: RequestType.Event;
+
+    /**
+     * Channel
+     */
+    channel: string;
+
+    /**
+     * Value
+     */
+    value: string;
+}
+
+
+/**
  * Request
  */
 export type Request =
@@ -332,7 +576,20 @@ export type Request =
     | PurgeRequest
     | UpdateRequest
     | SetRequest
-    | GetRequest;
+    | GetRequest //
+    | ListRequest //
+    | InfoRequest //
+    | StatRequest //
+    | StatsRequest //
+    | SubscribeRequest //
+    | UnsubscribeRequest //
+    | PublishRequest //
+    | ConnectionsRequest //
+    | ConnectionRequest //
+    | ChannelsRequest //
+    | ChannelRequest //
+    | WhoAmIRequest //
+    | EventRequest
 
 /**
  * Query response

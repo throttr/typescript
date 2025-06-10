@@ -23,7 +23,7 @@ import {
     TTLType,
     ValueSize,
 } from './types';
-import { read, writeOnRequest, writeByValue } from './utils';
+import { read, writeByValue, writeOnRequest } from './utils';
 
 /**
  * Build request
@@ -93,7 +93,8 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
         case RequestType.Query:
         case RequestType.Get:
-        case RequestType.Purge: {
+        case RequestType.Purge:
+        case RequestType.Stat: {
             const keyBuffer = Buffer.from(request.key, 'utf-8');
 
             const buffer = Buffer.allocUnsafe(
@@ -108,6 +109,67 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
             buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
             keyBuffer.copy(buffer, offset);
+            return buffer;
+        }
+
+        case RequestType.Subscribe:
+        case RequestType.Unsubscribe:
+        case RequestType.Channel: {
+            const channelBuffer = Buffer.from(request.channel, 'utf-8');
+
+            const buffer = Buffer.allocUnsafe(
+                1 + // request_type
+                1 + // channel_size
+                channelBuffer.length
+            );
+
+            let offset = 0;
+            buffer.writeUInt8(request.type, offset);
+            offset += 1;
+            buffer.writeUInt8(channelBuffer.length, offset);
+            offset += 1;
+            channelBuffer.copy(buffer, offset);
+            return buffer;
+        }
+
+        case RequestType.Connection: {
+            const idBuffer = Buffer.from(request.id, 'utf-8');
+
+            const buffer = Buffer.allocUnsafe(
+                1 + // request_type
+                idBuffer.length
+            );
+
+            let offset = 0;
+            buffer.writeUInt8(request.type, offset);
+            offset += 1;
+            idBuffer.copy(buffer, offset);
+            return buffer;
+        }
+
+        case RequestType.Publish:
+        case RequestType.Event: {
+            const channelBuffer = Buffer.from(request.channel, 'utf-8');
+            const valueBuffer = Buffer.from(request.value, 'utf-8');
+
+            const buffer = Buffer.allocUnsafe(
+                1 + // request_type
+                1 + // channel_size
+                value_size.valueOf() + // value_size
+                channelBuffer.length +
+                valueBuffer.length
+            );
+
+            let offset = 0;
+            buffer.writeUInt8(request.type, offset);
+            offset += 1;
+            buffer.writeUInt8(channelBuffer.length, offset);
+            offset += 1;
+            writeByValue(buffer, valueBuffer.length, offset, value_size);
+            offset += value_size.valueOf();
+            channelBuffer.copy(buffer, offset);
+            offset += channelBuffer.length;
+            valueBuffer.copy(buffer, offset);
             return buffer;
         }
 
@@ -135,6 +197,21 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
             buffer.writeUInt8(keyBuffer.length, offset);
             offset += 1;
             keyBuffer.copy(buffer, offset);
+            return buffer;
+        }
+
+        case RequestType.List:
+        case RequestType.Info:
+        case RequestType.Stats:
+        case RequestType.Connections:
+        case RequestType.Channels:
+        case RequestType.WhoAmI: {
+            const buffer = Buffer.allocUnsafe(
+                1 // request_type
+            );
+
+            let offset = 0;
+            buffer.writeUInt8(request.type, offset);
             return buffer;
         }
 
