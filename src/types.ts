@@ -1251,6 +1251,11 @@ export interface ConnectionsItem {
     unsubscribe_requests: number;
 
     /**
+     * Connection request
+     */
+    connection_requests: number;
+
+    /**
      * Connections requests
      */
     connections_requests: number;

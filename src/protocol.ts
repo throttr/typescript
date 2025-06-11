@@ -239,6 +239,120 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 };
 
 /**
+ * Get connection structure
+ *
+ * @param buffer
+ * @param offset
+ * @constructor
+ */
+function GetConnectionStructure(buffer: Buffer, offset: number) : ConnectionsItem {
+    return {
+        id: buffer.subarray(offset, offset + 16).toString('hex'),
+        type: Number(read(buffer, offset + 16, ValueSize.UInt8)),
+        kind: Number(read(buffer, offset + 17, ValueSize.UInt8)),
+        ip_version: Number(read(buffer, offset + 18, ValueSize.UInt8)),
+        ip: buffer
+            .subarray(offset + 19, offset + 35)
+            .toString()
+            .replace(/\x00+$/, ''), // NOSONAR
+        port: Number(read(buffer, offset + 35, ValueSize.UInt16)),
+        connected_at: Number(read(buffer, offset + 37, ValueSize.UInt64)),
+        read_bytes: Number(read(buffer, offset + 45, ValueSize.UInt64)),
+        write_bytes: Number(read(buffer, offset + 53, ValueSize.UInt64)),
+        published_bytes: Number(read(buffer, offset + 61, ValueSize.UInt64)),
+        received_bytes: Number(read(buffer, offset + 69, ValueSize.UInt64)),
+        allocated_bytes: Number(read(buffer, offset + 77, ValueSize.UInt64)),
+        consumed_bytes: Number(read(buffer, offset + 85, ValueSize.UInt64)),
+        insert_requests: Number(read(buffer, offset + 93, ValueSize.UInt64)),
+        set_requests: Number(read(buffer, offset + 101, ValueSize.UInt64)),
+        query_requests: Number(read(buffer, offset + 109, ValueSize.UInt64)),
+        get_requests: Number(read(buffer, offset + 117, ValueSize.UInt64)),
+        update_requests: Number(read(buffer, offset + 125, ValueSize.UInt64)),
+        purge_requests: Number(read(buffer, offset + 133, ValueSize.UInt64)),
+        list_requests: Number(read(buffer, offset + 141, ValueSize.UInt64)),
+        info_requests: Number(read(buffer, offset + 149, ValueSize.UInt64)),
+        stat_requests: Number(read(buffer, offset + 157, ValueSize.UInt64)),
+        stats_requests: Number(read(buffer, offset + 165, ValueSize.UInt64)),
+        publish_requests: Number(read(buffer, offset + 173, ValueSize.UInt64)),
+        subscribe_requests: Number(read(buffer, offset + 181, ValueSize.UInt64)),
+        unsubscribe_requests: Number(read(buffer, offset + 189, ValueSize.UInt64)),
+        connections_requests: Number(read(buffer, offset + 197, ValueSize.UInt64)),
+        connection_requests: Number(read(buffer, offset + 205, ValueSize.UInt64)),
+        channels_requests: Number(read(buffer, offset + 213, ValueSize.UInt64)),
+        channel_requests: Number(read(buffer, offset + 221, ValueSize.UInt64)),
+        whoami_requests: Number(read(buffer, offset + 229, ValueSize.UInt64)),
+    }
+}
+
+/**
+ * Get info structure
+ *
+ * @param buffer
+ * @constructor
+ */
+function GetInfoStructure(buffer: Buffer) : InfoResponse {
+    return {
+        success: true,
+        timestamp: Number(read(buffer, 0, ValueSize.UInt64)),
+        total_requests: Number(read(buffer, 8, ValueSize.UInt64)),
+        total_requests_per_minute: Number(read(buffer, 16, ValueSize.UInt64)),
+        total_insert_requests: Number(read(buffer, 24, ValueSize.UInt64)),
+        total_insert_requests_per_minute: Number(read(buffer, 32, ValueSize.UInt64)),
+        total_query_requests: Number(read(buffer, 40, ValueSize.UInt64)),
+        total_query_requests_per_minute: Number(read(buffer, 48, ValueSize.UInt64)),
+        total_update_requests: Number(read(buffer, 56, ValueSize.UInt64)),
+        total_update_requests_per_minute: Number(read(buffer, 64, ValueSize.UInt64)),
+        total_purge_requests: Number(read(buffer, 72, ValueSize.UInt64)),
+        total_purge_requests_per_minute: Number(read(buffer, 80, ValueSize.UInt64)),
+        total_get_requests: Number(read(buffer, 88, ValueSize.UInt64)),
+        total_get_requests_per_minute: Number(read(buffer, 96, ValueSize.UInt64)),
+        total_set_requests: Number(read(buffer, 104, ValueSize.UInt64)),
+        total_set_requests_per_minute: Number(read(buffer, 112, ValueSize.UInt64)),
+        total_list_requests: Number(read(buffer, 120, ValueSize.UInt64)),
+        total_list_requests_per_minute: Number(read(buffer, 128, ValueSize.UInt64)),
+        total_info_requests: Number(read(buffer, 136, ValueSize.UInt64)),
+        total_info_requests_per_minute: Number(read(buffer, 144, ValueSize.UInt64)),
+        total_stats_requests: Number(read(buffer, 152, ValueSize.UInt64)),
+        total_stats_requests_per_minute: Number(read(buffer, 160, ValueSize.UInt64)),
+        total_stat_requests: Number(read(buffer, 168, ValueSize.UInt64)),
+        total_stat_requests_per_minute: Number(read(buffer, 176, ValueSize.UInt64)),
+        total_subscribe_requests: Number(read(buffer, 184, ValueSize.UInt64)),
+        total_subscribe_requests_per_minute: Number(read(buffer, 192, ValueSize.UInt64)),
+        total_unsubscribe_requests: Number(read(buffer, 200, ValueSize.UInt64)),
+        total_unsubscribe_requests_per_minute: Number(read(buffer, 208, ValueSize.UInt64)),
+        total_publish_requests: Number(read(buffer, 216, ValueSize.UInt64)),
+        total_publish_requests_per_minute: Number(read(buffer, 224, ValueSize.UInt64)),
+        total_channel_requests: Number(read(buffer, 232, ValueSize.UInt64)),
+        total_channel_requests_per_minute: Number(read(buffer, 240, ValueSize.UInt64)),
+        total_channels_requests: Number(read(buffer, 248, ValueSize.UInt64)),
+        total_channels_requests_per_minute: Number(read(buffer, 256, ValueSize.UInt64)),
+        total_whoami_requests: Number(read(buffer, 264, ValueSize.UInt64)),
+        total_whoami_requests_per_minute: Number(read(buffer, 272, ValueSize.UInt64)),
+        total_connection_requests: Number(read(buffer, 280, ValueSize.UInt64)),
+        total_connection_requests_per_minute: Number(read(buffer, 288, ValueSize.UInt64)),
+        total_connections_requests: Number(read(buffer, 296, ValueSize.UInt64)),
+        total_connections_requests_per_minute: Number(read(buffer, 304, ValueSize.UInt64)),
+        total_read_bytes: Number(read(buffer, 312, ValueSize.UInt64)),
+        total_read_bytes_per_minute: Number(read(buffer, 320, ValueSize.UInt64)),
+        total_write_bytes: Number(read(buffer, 328, ValueSize.UInt64)),
+        total_write_bytes_per_minute: Number(read(buffer, 336, ValueSize.UInt64)),
+        total_keys: Number(read(buffer, 344, ValueSize.UInt64)),
+        total_counters: Number(read(buffer, 352, ValueSize.UInt64)),
+        total_buffers: Number(read(buffer, 360, ValueSize.UInt64)),
+        total_allocated_bytes_on_counters: Number(read(buffer, 368, ValueSize.UInt64)),
+        total_allocated_bytes_on_buffers: Number(read(buffer, 376, ValueSize.UInt64)),
+        total_subscriptions: Number(read(buffer, 384, ValueSize.UInt64)),
+        total_channels: Number(read(buffer, 392, ValueSize.UInt64)),
+        startup_timestamp: Number(read(buffer, 400, ValueSize.UInt64)),
+        total_connections: Number(read(buffer, 408, ValueSize.UInt64)),
+        version: buffer
+            .subarray(416, 432)
+            .toString()
+            .replace(/\x00+$/, '') // NOSONAR
+    }
+}
+
+/**
  * Parse response
  *
  * @param buffer
@@ -279,7 +393,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const per_key_length = 11 + value_size;
         const keys = [] as ListItem[];
         for (let e = 0; e < fragments_count; e++) {
-            const current_fragment = read(buffer, offset, ValueSize.UInt64);
+            const current_fragment = read(buffer, offset, ValueSize.UInt64); // NOSONAR
             offset += 8;
             const current_number_of_keys = read(buffer, offset, ValueSize.UInt64);
             offset += 8;
@@ -437,48 +551,12 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const per_connection_length = 237;
         const connections = [] as ConnectionsItem[];
         for (let e = 0; e < fragments_count; e++) {
-            const current_fragment = read(buffer, offset, ValueSize.UInt64);
+            const current_fragment = read(buffer, offset, ValueSize.UInt64); // NOSONAR
             offset += 8;
             const current_number_of_connections = read(buffer, offset, ValueSize.UInt64);
             offset += 8;
             for (let i = 0; i < current_number_of_connections; i++) {
-                connections.push({
-                    id: buffer.subarray(offset, offset + 16).toString('hex'),
-                    type: Number(read(buffer, offset + 16, ValueSize.UInt8)),
-                    kind: Number(read(buffer, offset + 17, ValueSize.UInt8)),
-                    ip_version: Number(read(buffer, offset + 18, ValueSize.UInt8)),
-                    ip: buffer
-                        .subarray(offset + 19, offset + 35)
-                        .toString()
-                        .replace(/\x00+$/, ''), // NOSONAR
-                    port: Number(read(buffer, offset + 35, ValueSize.UInt16)),
-                    connected_at: Number(read(buffer, offset + 37, ValueSize.UInt64)),
-                    read_bytes: Number(read(buffer, offset + 45, ValueSize.UInt64)),
-                    write_bytes: Number(read(buffer, offset + 53, ValueSize.UInt64)),
-                    published_bytes: Number(read(buffer, offset + 61, ValueSize.UInt64)),
-                    received_bytes: Number(read(buffer, offset + 69, ValueSize.UInt64)),
-                    allocated_bytes: Number(read(buffer, offset + 77, ValueSize.UInt64)),
-                    consumed_bytes: Number(read(buffer, offset + 85, ValueSize.UInt64)),
-                    insert_requests: Number(read(buffer, offset + 93, ValueSize.UInt64)),
-                    set_requests: Number(read(buffer, offset + 101, ValueSize.UInt64)),
-                    query_requests: Number(read(buffer, offset + 109, ValueSize.UInt64)),
-                    get_requests: Number(read(buffer, offset + 117, ValueSize.UInt64)),
-                    update_requests: Number(read(buffer, offset + 125, ValueSize.UInt64)),
-                    purge_requests: Number(read(buffer, offset + 133, ValueSize.UInt64)),
-                    list_requests: Number(read(buffer, offset + 141, ValueSize.UInt64)),
-                    info_requests: Number(read(buffer, offset + 149, ValueSize.UInt64)),
-                    stat_requests: Number(read(buffer, offset + 157, ValueSize.UInt64)),
-                    stats_requests: Number(read(buffer, offset + 165, ValueSize.UInt64)),
-                    publish_requests: Number(read(buffer, offset + 173, ValueSize.UInt64)),
-                    subscribe_requests: Number(read(buffer, offset + 181, ValueSize.UInt64)),
-                    unsubscribe_requests: Number(read(buffer, offset + 189, ValueSize.UInt64)),
-                    connections_requests: Number(read(buffer, offset + 197, ValueSize.UInt64)),
-                    connection_requests: Number(read(buffer, offset + 205, ValueSize.UInt64)),
-                    channels_requests: Number(read(buffer, offset + 213, ValueSize.UInt64)),
-                    channel_requests: Number(read(buffer, offset + 221, ValueSize.UInt64)),
-                    whoami_requests: Number(read(buffer, offset + 229, ValueSize.UInt64)),
-                } as ConnectionsItem);
-
+                connections.push(GetConnectionStructure(buffer, offset));
                 offset += per_connection_length;
             }
         }
@@ -520,101 +598,10 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         let offset = 1;
         return {
             success: success,
-            id: buffer.subarray(offset, offset + 16).toString('hex'),
-            type: Number(read(buffer, offset + 16, ValueSize.UInt8)),
-            kind: Number(read(buffer, offset + 17, ValueSize.UInt8)),
-            ip_version: Number(read(buffer, offset + 18, ValueSize.UInt8)),
-            ip: buffer
-                .subarray(offset + 19, offset + 35)
-                .toString()
-                .replace(/\x00+$/, ''), // NOSONAR
-            port: Number(read(buffer, offset + 35, ValueSize.UInt16)),
-            connected_at: Number(read(buffer, offset + 37, ValueSize.UInt64)),
-            read_bytes: Number(read(buffer, offset + 45, ValueSize.UInt64)),
-            write_bytes: Number(read(buffer, offset + 53, ValueSize.UInt64)),
-            published_bytes: Number(read(buffer, offset + 61, ValueSize.UInt64)),
-            received_bytes: Number(read(buffer, offset + 69, ValueSize.UInt64)),
-            allocated_bytes: Number(read(buffer, offset + 77, ValueSize.UInt64)),
-            consumed_bytes: Number(read(buffer, offset + 85, ValueSize.UInt64)),
-            insert_requests: Number(read(buffer, offset + 93, ValueSize.UInt64)),
-            set_requests: Number(read(buffer, offset + 101, ValueSize.UInt64)),
-            query_requests: Number(read(buffer, offset + 109, ValueSize.UInt64)),
-            get_requests: Number(read(buffer, offset + 117, ValueSize.UInt64)),
-            update_requests: Number(read(buffer, offset + 125, ValueSize.UInt64)),
-            purge_requests: Number(read(buffer, offset + 133, ValueSize.UInt64)),
-            list_requests: Number(read(buffer, offset + 141, ValueSize.UInt64)),
-            info_requests: Number(read(buffer, offset + 149, ValueSize.UInt64)),
-            stat_requests: Number(read(buffer, offset + 157, ValueSize.UInt64)),
-            stats_requests: Number(read(buffer, offset + 165, ValueSize.UInt64)),
-            publish_requests: Number(read(buffer, offset + 173, ValueSize.UInt64)),
-            subscribe_requests: Number(read(buffer, offset + 181, ValueSize.UInt64)),
-            unsubscribe_requests: Number(read(buffer, offset + 189, ValueSize.UInt64)),
-            connections_requests: Number(read(buffer, offset + 197, ValueSize.UInt64)),
-            connection_requests: Number(read(buffer, offset + 205, ValueSize.UInt64)),
-            channels_requests: Number(read(buffer, offset + 213, ValueSize.UInt64)),
-            channel_requests: Number(read(buffer, offset + 221, ValueSize.UInt64)),
-            whoami_requests: Number(read(buffer, offset + 229, ValueSize.UInt64)),
+            ...GetConnectionStructure(buffer, offset)
         } as ConnectionResponse;
     } else if (expected === 'info') {
-        return {
-            success: true,
-            timestamp: Number(read(buffer, 0, ValueSize.UInt64)),
-            total_requests: Number(read(buffer, 8, ValueSize.UInt64)),
-            total_requests_per_minute: Number(read(buffer, 16, ValueSize.UInt64)),
-            total_insert_requests: Number(read(buffer, 24, ValueSize.UInt64)),
-            total_insert_requests_per_minute: Number(read(buffer, 32, ValueSize.UInt64)),
-            total_query_requests: Number(read(buffer, 40, ValueSize.UInt64)),
-            total_query_requests_per_minute: Number(read(buffer, 48, ValueSize.UInt64)),
-            total_update_requests: Number(read(buffer, 56, ValueSize.UInt64)),
-            total_update_requests_per_minute: Number(read(buffer, 64, ValueSize.UInt64)),
-            total_purge_requests: Number(read(buffer, 72, ValueSize.UInt64)),
-            total_purge_requests_per_minute: Number(read(buffer, 80, ValueSize.UInt64)),
-            total_get_requests: Number(read(buffer, 88, ValueSize.UInt64)),
-            total_get_requests_per_minute: Number(read(buffer, 96, ValueSize.UInt64)),
-            total_set_requests: Number(read(buffer, 104, ValueSize.UInt64)),
-            total_set_requests_per_minute: Number(read(buffer, 112, ValueSize.UInt64)),
-            total_list_requests: Number(read(buffer, 120, ValueSize.UInt64)),
-            total_list_requests_per_minute: Number(read(buffer, 128, ValueSize.UInt64)),
-            total_info_requests: Number(read(buffer, 136, ValueSize.UInt64)),
-            total_info_requests_per_minute: Number(read(buffer, 144, ValueSize.UInt64)),
-            total_stats_requests: Number(read(buffer, 152, ValueSize.UInt64)),
-            total_stats_requests_per_minute: Number(read(buffer, 160, ValueSize.UInt64)),
-            total_stat_requests: Number(read(buffer, 168, ValueSize.UInt64)),
-            total_stat_requests_per_minute: Number(read(buffer, 176, ValueSize.UInt64)),
-            total_subscribe_requests: Number(read(buffer, 184, ValueSize.UInt64)),
-            total_subscribe_requests_per_minute: Number(read(buffer, 192, ValueSize.UInt64)),
-            total_unsubscribe_requests: Number(read(buffer, 200, ValueSize.UInt64)),
-            total_unsubscribe_requests_per_minute: Number(read(buffer, 208, ValueSize.UInt64)),
-            total_publish_requests: Number(read(buffer, 216, ValueSize.UInt64)),
-            total_publish_requests_per_minute: Number(read(buffer, 224, ValueSize.UInt64)),
-            total_channel_requests: Number(read(buffer, 232, ValueSize.UInt64)),
-            total_channel_requests_per_minute: Number(read(buffer, 240, ValueSize.UInt64)),
-            total_channels_requests: Number(read(buffer, 248, ValueSize.UInt64)),
-            total_channels_requests_per_minute: Number(read(buffer, 256, ValueSize.UInt64)),
-            total_whoami_requests: Number(read(buffer, 264, ValueSize.UInt64)),
-            total_whoami_requests_per_minute: Number(read(buffer, 272, ValueSize.UInt64)),
-            total_connection_requests: Number(read(buffer, 280, ValueSize.UInt64)),
-            total_connection_requests_per_minute: Number(read(buffer, 288, ValueSize.UInt64)),
-            total_connections_requests: Number(read(buffer, 296, ValueSize.UInt64)),
-            total_connections_requests_per_minute: Number(read(buffer, 304, ValueSize.UInt64)),
-            total_read_bytes: Number(read(buffer, 312, ValueSize.UInt64)),
-            total_read_bytes_per_minute: Number(read(buffer, 320, ValueSize.UInt64)),
-            total_write_bytes: Number(read(buffer, 328, ValueSize.UInt64)),
-            total_write_bytes_per_minute: Number(read(buffer, 336, ValueSize.UInt64)),
-            total_keys: Number(read(buffer, 344, ValueSize.UInt64)),
-            total_counters: Number(read(buffer, 352, ValueSize.UInt64)),
-            total_buffers: Number(read(buffer, 360, ValueSize.UInt64)),
-            total_allocated_bytes_on_counters: Number(read(buffer, 368, ValueSize.UInt64)),
-            total_allocated_bytes_on_buffers: Number(read(buffer, 376, ValueSize.UInt64)),
-            total_subscriptions: Number(read(buffer, 384, ValueSize.UInt64)),
-            total_channels: Number(read(buffer, 392, ValueSize.UInt64)),
-            startup_timestamp: Number(read(buffer, 400, ValueSize.UInt64)),
-            total_connections: Number(read(buffer, 408, ValueSize.UInt64)),
-            version: buffer
-                .subarray(416, 432)
-                .toString()
-                .replace(/\x00+$/, ''), // NOSONAR
-        } as InfoResponse;
+        return GetInfoStructure(buffer);
     } else if (expected === 'stat') {
         if (buffer.length === 1) {
             return {
