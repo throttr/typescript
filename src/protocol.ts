@@ -245,7 +245,7 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
  * @param offset
  * @constructor
  */
-function GetConnectionStructure(buffer: Buffer, offset: number) : ConnectionsItem {
+function GetConnectionStructure(buffer: Buffer, offset: number): ConnectionsItem {
     return {
         id: buffer.subarray(offset, offset + 16).toString('hex'),
         type: Number(read(buffer, offset + 16, ValueSize.UInt8)),
@@ -281,7 +281,7 @@ function GetConnectionStructure(buffer: Buffer, offset: number) : ConnectionsIte
         channels_requests: Number(read(buffer, offset + 213, ValueSize.UInt64)),
         channel_requests: Number(read(buffer, offset + 221, ValueSize.UInt64)),
         whoami_requests: Number(read(buffer, offset + 229, ValueSize.UInt64)),
-    }
+    };
 }
 
 /**
@@ -290,7 +290,7 @@ function GetConnectionStructure(buffer: Buffer, offset: number) : ConnectionsIte
  * @param buffer
  * @constructor
  */
-function GetInfoStructure(buffer: Buffer) : InfoResponse {
+function GetInfoStructure(buffer: Buffer): InfoResponse {
     return {
         success: true,
         timestamp: Number(read(buffer, 0, ValueSize.UInt64)),
@@ -348,8 +348,8 @@ function GetInfoStructure(buffer: Buffer) : InfoResponse {
         version: buffer
             .subarray(416, 432)
             .toString()
-            .replace(/\x00+$/, '') // NOSONAR
-    }
+            .replace(/\x00+$/, ''), // NOSONAR
+    };
 }
 
 /**
@@ -601,7 +601,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         let offset = 1;
         return {
             success: success,
-            ...GetConnectionStructure(buffer, offset)
+            ...GetConnectionStructure(buffer, offset),
         } as ConnectionResponse;
     } else if (expected === 'info') {
         return GetInfoStructure(buffer);

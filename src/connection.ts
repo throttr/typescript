@@ -14,10 +14,17 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import { Request, Response, ResponseType, QueuedRequest, Configuration, ValueSize, RoundStatus } from './types';
+import {
+    Request,
+    Response,
+    ResponseType,
+    QueuedRequest,
+    Configuration,
+    ValueSize,
+    RoundStatus,
+} from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 import { read } from './utils';
-import { isNumberObject } from 'node:util/types';
 
 /**
  * Connection
@@ -317,7 +324,7 @@ export class Connection {
      * @param offset
      * @private
      */
-    private onEmptyQueueRound(iterationBuffer: Buffer, offset: number) : RoundStatus {
+    private onEmptyQueueRound(iterationBuffer: Buffer, offset: number): RoundStatus {
         // We have nothing on the queue but we have bytes
         const firstByte = iterationBuffer.readUInt8(offset);
 
@@ -330,13 +337,13 @@ export class Connection {
                 should_continue: true,
                 offset: offset,
                 buffer: iterationBuffer,
-            }
+            };
         } else {
             return {
                 should_continue: false,
                 offset: offset,
                 buffer: iterationBuffer,
-            }
+            };
         }
         /* c8 ignore stop */
     }
@@ -348,7 +355,7 @@ export class Connection {
      * @param offset
      * @private
      */
-    private doRound(iterationBuffer: Buffer, offset: number) : RoundStatus {
+    private doRound(iterationBuffer: Buffer, offset: number): RoundStatus {
         if (this.queue.length > 0) {
             // We take the first request on the queue
             const current = this.queue[0];
@@ -397,7 +404,7 @@ export class Connection {
                     should_continue: false,
                     offset: offset,
                     buffer: iterationBuffer,
-                }
+                };
             }
             /* c8 ignore stop */
 
@@ -415,6 +422,389 @@ export class Connection {
         } else {
             return this.onEmptyQueueRound(iterationBuffer, offset);
         }
+    }
+
+    /**
+     * Process QUERY
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @param firstByte
+     * @private
+     */
+    private processQuery(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number,
+        firstByte: number
+    ): { offset: number } | false {
+        // And was failed then
+        if (firstByte === 0x00) {
+            // It can be considered as STATUS response
+            const slice = buffer.subarray(offset, offset + 1);
+            // And parsed
+            return this.tryParse(slice, type, current, offset + 1);
+        }
+
+        // Otherwise we have more bytes to read
+        // Status + TTL + TTL Type + Quota
+        const expectedLength = this.config.value_size * 2 + 2;
+
+        // If the buffer is less than the expected value is this is an incomplete response
+        // And report this try handle response as failed.
+        /* c8 ignore start */
+        if (buffer.length < offset + expectedLength) return false;
+        /* c8 ignore stop */
+
+        // Otherwise we take the buffer completed
+        const slice = buffer.subarray(offset, offset + expectedLength);
+        // And parse
+        return this.tryParse(slice, type, current, offset + expectedLength);
+    }
+
+    /**
+     * Process GET
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @param firstByte
+     * @private
+     */
+    private processGet(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number,
+        firstByte: number
+    ): { offset: number } | false {
+        // And was failed then
+        if (firstByte === 0x00) {
+            // It can be considered as STATUS response
+            const slice = buffer.subarray(offset, offset + 1);
+            // And parsed
+            return this.tryParse(slice, type, current, offset + 1);
+        }
+
+        // Otherwise we have more bytes to read
+        // Status + TTL + TTL Type + SizeOf(Value)
+        const expectedLength = this.config.value_size * 2 + 2;
+
+        // If the buffer is less than the expected value is this is an incomplete response
+        // And report this try handle response as failed.
+        /* c8 ignore start */
+        if (buffer.length < offset + expectedLength) return false;
+        /* c8 ignore stop */
+
+        // Otherwise we take the value of the lasts 2 bytes as considered as SizeOf(Value)
+        const valueSize = read(buffer, 2 + this.config.value_size, this.config.value_size);
+
+        // If the buffer is less than the expected value plus SizeOf(Value) is this is an incomplete response
+        // And report this try handle response as failed.
+        /* c8 ignore start */
+        if (buffer.length < offset + expectedLength + Number(valueSize)) return false;
+        /* c8 ignore stop */
+
+        // Otherwise the take the buffer complete
+        const slice = buffer.subarray(offset, offset + expectedLength + Number(valueSize));
+
+        // And parse
+        return this.tryParse(slice, type, current, offset + expectedLength + Number(valueSize));
+        /* c8 ignore start */
+    }
+
+    /**
+     * Process LIST, STATS and CHANNELS
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @private
+     */
+    private processFragmentedLSCRequests(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number
+    ): { offset: number } | false {
+        let scoped_offset = offset + 8 + 1;
+        /* c8 ignore start */
+        if (buffer.length < scoped_offset) return false;
+        /* c8 ignore stop */
+
+        const fragments = Number(read(buffer, offset + 1, ValueSize.UInt64));
+
+        /* c8 ignore start */
+        const ternary_length = type == 'stats' ? 33 : 25;
+        const list_length = 11 + this.config.value_size;
+        const per_key_length = type === 'list' ? list_length : ternary_length;
+        /* c8 ignore stop */
+
+        for (let e = 0; e < fragments; e++) {
+            /* c8 ignore start */
+            if (buffer.length < scoped_offset + 8) return false;
+            /* c8 ignore stop */
+
+            scoped_offset += 8;
+
+            /* c8 ignore start */
+            if (buffer.length < scoped_offset + 8) return false;
+            /* c8 ignore stop */
+
+            const current_number_of_keys = Number(read(buffer, scoped_offset, ValueSize.UInt64));
+            scoped_offset += 8;
+
+            /* c8 ignore start */
+            if (buffer.length < scoped_offset + current_number_of_keys * per_key_length)
+                return false;
+            /* c8 ignore stop */
+
+            let total_bytes_on_channels = 0;
+            for (let i = 0; i < current_number_of_keys; i++) {
+                const key_length = Number(read(buffer, scoped_offset, ValueSize.UInt8));
+                scoped_offset += per_key_length;
+                total_bytes_on_channels += key_length;
+            }
+
+            scoped_offset += total_bytes_on_channels;
+
+            /* c8 ignore start */
+            if (buffer.length < scoped_offset) return false;
+            /* c8 ignore stop */
+        }
+
+        const slice = buffer.subarray(offset, offset + scoped_offset);
+        return this.tryParse(slice, type, current, offset + scoped_offset);
+    }
+
+    /**
+     * Process CHANNEL
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @param firstByte
+     * @private
+     */
+    private processChannel(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number,
+        firstByte: number
+    ): { offset: number } | false {
+        /* c8 ignore start */
+        if (firstByte === 0x00) {
+            const slice = buffer.subarray(offset, offset + 1);
+            return this.tryParse(slice, type, current, offset + 1);
+        }
+        /* c8 ignore stop */
+
+        /* c8 ignore start */
+        if (buffer.length < 9) return false;
+        /* c8 ignore stop */
+
+        const connections = Number(read(buffer, offset + 1, ValueSize.UInt64));
+
+        /* c8 ignore start */
+        if (buffer.length < 9 + connections * 40) return false;
+        /* c8 ignore stop */
+
+        const slice = buffer.subarray(offset, offset + 1 + 8 + connections * 40);
+        return this.tryParse(slice, type, current, offset + 1 + 8 + connections * 40);
+    }
+
+    /**
+     * Process CONNECTIONS
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @param firstByte
+     * @private
+     */
+    private processConnections(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number,
+        firstByte: number
+    ): { offset: number } | false {
+        let scoped_offset = offset + 8 + 1;
+
+        /* c8 ignore start */
+        if (buffer.length < scoped_offset) return false;
+        /* c8 ignore stop */
+
+        const fragments = Number(read(buffer, offset + 1, ValueSize.UInt64));
+        const per_key_connection_size = 237;
+
+        for (let e = 0; e < fragments; e++) {
+            /* c8 ignore start */
+            if (buffer.length < scoped_offset + 8) return false;
+            /* c8 ignore stop */
+
+            scoped_offset += 8;
+
+            /* c8 ignore start */
+            if (buffer.length < scoped_offset + 8) return false;
+            /* c8 ignore stop */
+
+            const current_number_of_connections = Number(
+                read(buffer, scoped_offset, ValueSize.UInt64)
+            );
+            scoped_offset += 8;
+
+            /* c8 ignore start */
+            if (
+                buffer.length <
+                scoped_offset + current_number_of_connections * per_key_connection_size
+            )
+                return false;
+            /* c8 ignore stop */
+
+            scoped_offset += current_number_of_connections * per_key_connection_size;
+        }
+
+        const slice = buffer.subarray(offset, offset + scoped_offset);
+        return this.tryParse(slice, type, current, offset + scoped_offset);
+    }
+
+    /**
+     * Process STAT
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @param firstByte
+     * @private
+     */
+    private processStat(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number,
+        firstByte: number
+    ): { offset: number } | false {
+        if (firstByte === 0x00) {
+            const slice = buffer.subarray(offset, offset + 1);
+            return this.tryParse(slice, type, current, offset + 1);
+        }
+
+        /* c8 ignore start */
+        if (buffer.length < 32) return false;
+        /* c8 ignore stop */
+
+        const slice = buffer.subarray(offset, offset + 33);
+        return this.tryParse(slice, type, current, offset + 33);
+    }
+
+    /**
+     * Process STATUS based requests
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @private
+     */
+    private processStatus(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number
+    ): { offset: number } | false {
+        // We take the byte on the offset
+        const slice = buffer.subarray(offset, offset + 1);
+        // And parse
+        return this.tryParse(slice, type, current, offset + 1);
+    }
+
+    /**
+     * Process CONNECTION
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @param firstByte
+     * @private
+     */
+    private processConnection(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number,
+        firstByte: number
+    ): { offset: number } | false {
+        /* c8 ignore start */
+        if (firstByte === 0x00) {
+            const slice = buffer.subarray(offset, offset + 1);
+            return this.tryParse(slice, type, current, offset + 1);
+        }
+        /* c8 ignore stop */
+
+        let scoped_offset = offset + 1 + 237;
+
+        /* c8 ignore start */
+        if (buffer.length < scoped_offset) return false;
+        /* c8 ignore stop */
+
+        const slice = buffer.subarray(offset, offset + scoped_offset);
+        return this.tryParse(slice, type, current, offset + scoped_offset);
+    }
+
+    /**
+     * Process INFO
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @private
+     */
+    private processInfo(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number
+    ): { offset: number } | false {
+        /* c8 ignore start */
+        if (buffer.length < 432) return false;
+        /* c8 ignore stop */
+
+        const slice = buffer.subarray(offset, offset + 433);
+        return this.tryParse(slice, type, current, offset + 433);
+    }
+
+    /**
+     * Process WHOAMI
+     *
+     * @param type
+     * @param current
+     * @param buffer
+     * @param offset
+     * @private
+     */
+    private processWhoAmI(
+        type: ResponseType,
+        current: QueuedRequest,
+        buffer: Buffer,
+        offset: number
+    ): { offset: number } | false {
+        /* c8 ignore start */
+        if (buffer.length < 17) return false;
+        /* c8 ignore stop */
+
+        const slice = buffer.subarray(offset, offset + 17);
+        return this.tryParse(slice, type, current, offset + 17);
     }
 
     /**
@@ -465,245 +855,32 @@ export class Connection {
         offset: number
     ): { offset: number } | false {
         // If the response was STATUS
-        if (type === 'status') {
-            // We take the byte on the offset
-            const slice = buffer.subarray(offset, offset + 1);
-            // And parse
-            return this.tryParse(slice, type, current, offset + 1);
+        switch (type) {
+            case 'status':
+                return this.processStatus(type, current, buffer, offset);
+            case 'query':
+                return this.processQuery(type, current, buffer, offset, firstByte);
+            case 'list':
+            case 'stats':
+            case 'channels':
+                return this.processFragmentedLSCRequests(type, current, buffer, offset);
+            case 'connections':
+                return this.processConnections(type, current, buffer, offset, firstByte);
+            case 'connection':
+                return this.processConnection(type, current, buffer, offset, firstByte);
+            case 'info':
+                return this.processInfo(type, current, buffer, offset);
+            case 'whoami':
+                return this.processWhoAmI(type, current, buffer, offset);
+            case 'stat':
+                return this.processStat(type, current, buffer, offset, firstByte);
+            case 'channel':
+                return this.processChannel(type, current, buffer, offset, firstByte);
+            case 'get':
+                return this.processGet(type, current, buffer, offset, firstByte);
+            default:
+                return false;
         }
-
-        // If the response is QUERY
-        if (type === 'query') {
-            // And was failed then
-            if (firstByte === 0x00) {
-                // It can be considered as STATUS response
-                const slice = buffer.subarray(offset, offset + 1);
-                // And parsed
-                return this.tryParse(slice, type, current, offset + 1);
-            }
-
-            // Otherwise we have more bytes to read
-            // Status + TTL + TTL Type + Quota
-            const expectedLength = this.config.value_size * 2 + 2;
-
-            // If the buffer is less than the expected value is this is an incomplete response
-            // And report this try handle response as failed.
-            /* c8 ignore start */
-            if (buffer.length < offset + expectedLength) return false;
-            /* c8 ignore stop */
-
-            // Otherwise we take the buffer completed
-            const slice = buffer.subarray(offset, offset + expectedLength);
-            // And parse
-            return this.tryParse(slice, type, current, offset + expectedLength);
-        }
-
-        if (type == 'list' || type == 'stats' || type == 'channels') {
-            let scoped_offset = offset + 8 + 1;
-            /* c8 ignore start */
-            if (buffer.length < scoped_offset) return false;
-            /* c8 ignore stop */
-
-            const fragments = Number(read(buffer, offset + 1, ValueSize.UInt64));
-
-            /* c8 ignore start */
-            const ternary_length = type == 'stats' ? 33 : 25;
-            const list_length = 11 + this.config.value_size;
-            const per_key_length = type === 'list' ? list_length : ternary_length;
-            /* c8 ignore stop */
-
-            for (let e = 0; e < fragments; e++) {
-                /* c8 ignore start */
-                if (buffer.length < scoped_offset + 8) return false;
-                /* c8 ignore stop */
-
-                const current_fragment = Number(read(buffer, scoped_offset, ValueSize.UInt64)); // NOSONAR
-                scoped_offset += 8;
-
-                /* c8 ignore start */
-                if (buffer.length < scoped_offset + 8) return false;
-                /* c8 ignore stop */
-
-                const current_number_of_keys = Number(
-                    read(buffer, scoped_offset, ValueSize.UInt64)
-                );
-                scoped_offset += 8;
-
-                /* c8 ignore start */
-                if (buffer.length < scoped_offset + current_number_of_keys * per_key_length)
-                    return false;
-                /* c8 ignore stop */
-
-                let total_bytes_on_channels = 0;
-                for (let i = 0; i < current_number_of_keys; i++) {
-                    const key_length = Number(read(buffer, scoped_offset, ValueSize.UInt8));
-                    scoped_offset += per_key_length;
-                    total_bytes_on_channels += key_length;
-                }
-
-                scoped_offset += total_bytes_on_channels;
-
-                /* c8 ignore start */
-                if (buffer.length < scoped_offset) return false;
-                /* c8 ignore stop */
-            }
-
-            const slice = buffer.subarray(offset, offset + scoped_offset);
-            return this.tryParse(slice, type, current, offset + scoped_offset);
-        }
-
-        if (type == 'connections') {
-            let scoped_offset = offset + 8 + 1;
-
-            /* c8 ignore start */
-            if (buffer.length < scoped_offset) return false;
-            /* c8 ignore stop */
-
-            const fragments = Number(read(buffer, offset + 1, ValueSize.UInt64));
-            const per_key_connection_size = 237;
-
-            for (let e = 0; e < fragments; e++) {
-                /* c8 ignore start */
-                if (buffer.length < scoped_offset + 8) return false;
-                /* c8 ignore stop */
-
-                const current_fragment = Number(read(buffer, scoped_offset, ValueSize.UInt64)); // NOSONAR
-                scoped_offset += 8;
-
-                /* c8 ignore start */
-                if (buffer.length < scoped_offset + 8) return false;
-                /* c8 ignore stop */
-
-                const current_number_of_connections = Number(
-                    read(buffer, scoped_offset, ValueSize.UInt64)
-                );
-                scoped_offset += 8;
-
-                /* c8 ignore start */
-                if (
-                    buffer.length <
-                    scoped_offset + current_number_of_connections * per_key_connection_size
-                )
-                    return false;
-                /* c8 ignore stop */
-
-                scoped_offset += current_number_of_connections * per_key_connection_size;
-            }
-
-            const slice = buffer.subarray(offset, offset + scoped_offset);
-            return this.tryParse(slice, type, current, offset + scoped_offset);
-        }
-
-        if (type == 'connection') {
-            /* c8 ignore start */
-            if (firstByte === 0x00) {
-                const slice = buffer.subarray(offset, offset + 1);
-                return this.tryParse(slice, type, current, offset + 1);
-            }
-            /* c8 ignore stop */
-
-            let scoped_offset = offset + 1 + 237;
-
-            /* c8 ignore start */
-            if (buffer.length < scoped_offset) return false;
-            /* c8 ignore stop */
-
-            const slice = buffer.subarray(offset, offset + scoped_offset);
-            return this.tryParse(slice, type, current, offset + scoped_offset);
-        }
-
-        if (type == 'info') {
-            /* c8 ignore start */
-            if (buffer.length < 432) return false;
-            /* c8 ignore stop */
-
-            const slice = buffer.subarray(offset, offset + 433);
-            return this.tryParse(slice, type, current, offset + 433);
-        }
-
-        if (type == 'whoami') {
-            /* c8 ignore start */
-            if (buffer.length < 17) return false;
-            /* c8 ignore stop */
-
-            const slice = buffer.subarray(offset, offset + 17);
-            return this.tryParse(slice, type, current, offset + 17);
-        }
-
-        if (type == 'stat') {
-            if (firstByte === 0x00) {
-                const slice = buffer.subarray(offset, offset + 1);
-                return this.tryParse(slice, type, current, offset + 1);
-            }
-
-            /* c8 ignore start */
-            if (buffer.length < 32) return false;
-            /* c8 ignore stop */
-
-            const slice = buffer.subarray(offset, offset + 33);
-            return this.tryParse(slice, type, current, offset + 33);
-        }
-
-        if (type == 'channel') {
-            /* c8 ignore start */
-            if (firstByte === 0x00) {
-                const slice = buffer.subarray(offset, offset + 1);
-                return this.tryParse(slice, type, current, offset + 1);
-            }
-            /* c8 ignore stop */
-
-            /* c8 ignore start */
-            if (buffer.length < 9) return false;
-            /* c8 ignore stop */
-
-            const connections = Number(read(buffer, offset + 1, ValueSize.UInt64));
-
-            /* c8 ignore start */
-            if (buffer.length < 9 + connections * 40) return false;
-            /* c8 ignore stop */
-
-            const slice = buffer.subarray(offset, offset + 1 + 8 + connections * 40);
-            return this.tryParse(slice, type, current, offset + 1 + 8 + connections * 40);
-        }
-
-        // If the response is GET
-        if (type === 'get') {
-            // And was failed then
-            if (firstByte === 0x00) {
-                // It can be considered as STATUS response
-                const slice = buffer.subarray(offset, offset + 1);
-                // And parsed
-                return this.tryParse(slice, type, current, offset + 1);
-            }
-
-            // Otherwise we have more bytes to read
-            // Status + TTL + TTL Type + SizeOf(Value)
-            const expectedLength = this.config.value_size * 2 + 2;
-
-            // If the buffer is less than the expected value is this is an incomplete response
-            // And report this try handle response as failed.
-            /* c8 ignore start */
-            if (buffer.length < offset + expectedLength) return false;
-            /* c8 ignore stop */
-
-            // Otherwise we take the value of the lasts 2 bytes as considered as SizeOf(Value)
-            const valueSize = read(buffer, 2 + this.config.value_size, this.config.value_size);
-
-            // If the buffer is less than the expected value plus SizeOf(Value) is this is an incomplete response
-            // And report this try handle response as failed.
-            /* c8 ignore start */
-            if (buffer.length < offset + expectedLength + Number(valueSize)) return false;
-            /* c8 ignore stop */
-
-            // Otherwise the take the buffer complete
-            const slice = buffer.subarray(offset, offset + expectedLength + Number(valueSize));
-
-            // And parse
-            return this.tryParse(slice, type, current, offset + expectedLength + Number(valueSize));
-            /* c8 ignore start */
-        }
-
-        return false;
         /* c8 ignore stop */
     }
 
