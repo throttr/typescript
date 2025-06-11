@@ -876,8 +876,10 @@ export class Connection {
                 return this.processChannel(type, current, buffer, offset, firstByte);
             case 'get':
                 return this.processGet(type, current, buffer, offset, firstByte);
+            /* c8 ignore start */
             default:
                 return false;
+            /* c8 ignore stop */
         }
         /* c8 ignore stop */
     }

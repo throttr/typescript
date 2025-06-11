@@ -120,6 +120,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
             return HandleWhoAmI(buffer);
         case 'get':
             return HandleGet(buffer, value_size);
+        /* c8 ignore start */
         default:
             return {
                 success: false,
@@ -127,6 +128,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
                 ttl_type: TTLType.Nanoseconds,
                 ttl: 0,
             };
+        /* c8 ignore stop */
     }
 }
 
