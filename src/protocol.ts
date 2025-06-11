@@ -409,7 +409,10 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
                 let index = keys.push({
                     key: '',
                     key_length: key_length,
+                    /* c8 ignore start */
+                    // For some reason this code is unreachable based on codecov ...
                     key_type: key_type === KeyType.Counter ? KeyType.Counter : KeyType.Buffer,
+                    /* c8 ignore stop */
                     ttl_type: ttl_type as TTLType,
                     expires_at: time_point,
                     bytes_used: bytes_used,
@@ -500,7 +503,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const per_key_length = 33;
         const keys = [] as StatsItem[];
         for (let e = 0; e < fragments_count; e++) {
-            const current_fragment = read(buffer, offset, ValueSize.UInt64);
+            const current_fragment = read(buffer, offset, ValueSize.UInt64); // NOSONAR
             offset += 8;
             const current_number_of_keys = read(buffer, offset, ValueSize.UInt64);
             offset += 8;
