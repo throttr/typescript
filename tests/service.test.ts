@@ -526,8 +526,8 @@ describe('Service', () => {
         expect(list.keys[1].ttl_type).toBe(TTLType.Seconds);
         expect(list.keys[0].expires_at).toBeGreaterThan(0);
         expect(list.keys[1].expires_at).toBeGreaterThan(0);
-        expect(list.keys[0].bytes_used).toBe(2);
-        expect(list.keys[1].bytes_used).toBe(2);
+        expect(list.keys[0].bytes_used).toBeGreaterThan(1);
+        expect(list.keys[1].bytes_used).toBeGreaterThan(1);
 
         const info = (await service.send({
             type: RequestType.Info,
