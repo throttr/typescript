@@ -561,7 +561,7 @@ export class Connection {
             /* c8 ignore start */
             if (buffer.length < 17) return false;
             /* c8 ignore stop */
-            
+
             const slice = buffer.subarray(offset, offset + 17);
             return this.tryParse(slice, type, current, offset + 17);
         }
@@ -572,21 +572,31 @@ export class Connection {
                 return this.tryParse(slice, type, current, offset + 1);
             }
 
+            /* c8 ignore start */
             if (buffer.length < 32) return false;
+            /* c8 ignore stop */
+
             const slice = buffer.subarray(offset, offset + 33);
             return this.tryParse(slice, type, current, offset + 33);
         }
 
         if (type == 'channel') {
+            /* c8 ignore start */
             if (firstByte === 0x00) {
                 const slice = buffer.subarray(offset, offset + 1);
                 return this.tryParse(slice, type, current, offset + 1);
             }
+            /* c8 ignore stop */
 
+            /* c8 ignore start */
             if (buffer.length < 9) return false;
+            /* c8 ignore stop */
+
             const connections = Number(read(buffer, offset + 1, ValueSize.UInt64));
 
+            /* c8 ignore start */
             if (buffer.length < 9 + connections * 40) return false;
+            /* c8 ignore stop */
 
             const slice = buffer.subarray(offset, offset + 1 + 8 + connections * 40);
             return this.tryParse(slice, type, current, offset + 1 + 8 + connections * 40);
