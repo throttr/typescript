@@ -33,11 +33,11 @@ import {
     KeyType,
     ListResponse,
     StatResponse,
-    StatsResponse, WhoAmIResponse,
+    StatsResponse,
+    WhoAmIResponse,
 } from '../src/types';
 
-
-const prepareService = async ()=> {
+const prepareService = async () => {
     const size = process.env.THROTTR_SIZE ?? 'uint16';
 
     const value_size: ValueSize = {
@@ -57,11 +57,9 @@ const prepareService = async ()=> {
     await service.connect();
 
     return service;
-}
-
+};
 
 describe('Service', () => {
-
     const flexNumber = (bigInt: boolean, number: number) => (bigInt ? BigInt(number) : number); // NOSONAR
 
     it('it should be compatible with throttr server', async () => {
@@ -86,7 +84,6 @@ describe('Service', () => {
         expect(insert.success).toBe(true);
 
         // After that, we are going to make a QUERY to see what was stored ...
-        
 
         const first_query = (await service.send({
             type: RequestType.Query,
@@ -107,7 +104,6 @@ describe('Service', () => {
         expect(first_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // Right now we will UPDATE the quota to zero using "decrease" operation ...
-        
 
         const success_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -124,7 +120,6 @@ describe('Service', () => {
         expect(success_decrease_update.success).toBe(true);
 
         // After that we're going to check if we can "decrease" again ...
-        
 
         const failed_decrease_update = (await service.send({
             type: RequestType.Update,
@@ -141,7 +136,6 @@ describe('Service', () => {
         expect(failed_decrease_update.success).toBe(false);
 
         // After that we're going to query to see how much "Quota" we have ...
-        
 
         const empty_quota_query = (await service.send({
             type: RequestType.Query,
@@ -162,7 +156,6 @@ describe('Service', () => {
         expect(empty_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "patch" the "Quota" to 10 ...
-        
 
         const success_patch_update = (await service.send({
             type: RequestType.Update,
@@ -179,7 +172,6 @@ describe('Service', () => {
         expect(success_patch_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
-        
 
         const patched_quota_query = (await service.send({
             type: RequestType.Query,
@@ -200,7 +192,6 @@ describe('Service', () => {
         expect(patched_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "increase" the "Quota" by 20 ...
-        
 
         const success_increase_update = (await service.send({
             type: RequestType.Update,
@@ -217,7 +208,6 @@ describe('Service', () => {
         expect(success_increase_update.success).toBe(true);
 
         // After that we're going to query to see how much "Quota" we have ...
-        
 
         const increased_quota_query = (await service.send({
             type: RequestType.Query,
@@ -238,7 +228,6 @@ describe('Service', () => {
         expect(increased_quota_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "increase" the "TTL" by 60 ...
-        
 
         const success_increase_ttl = (await service.send({
             type: RequestType.Update,
@@ -255,7 +244,6 @@ describe('Service', () => {
         expect(success_increase_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
-        
 
         const increased_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -276,7 +264,6 @@ describe('Service', () => {
         expect(increased_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 120));
 
         // After that we're going to UPDATE to "decrease" the "TTL" by 60 ...
-        
 
         const success_decrease_ttl = (await service.send({
             type: RequestType.Update,
@@ -293,7 +280,6 @@ describe('Service', () => {
         expect(success_decrease_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
-        
 
         const decrease_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -314,7 +300,6 @@ describe('Service', () => {
         expect(decrease_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 60));
 
         // After that we're going to UPDATE to "patch" the "TTL" to 90 ...
-        
 
         const success_patch_ttl = (await service.send({
             type: RequestType.Update,
@@ -331,7 +316,6 @@ describe('Service', () => {
         expect(success_patch_ttl.success).toBe(true);
 
         // After that we're going to query to see how much "TTL" we have ...
-        
 
         const patch_ttl_query = (await service.send({
             type: RequestType.Query,
@@ -352,7 +336,6 @@ describe('Service', () => {
         expect(patch_ttl_query.ttl).toBeLessThan(flexNumber(isBigInt, 90));
 
         // After that we're going to purge the key ...
-        
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -366,7 +349,6 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to try again ...
-        
 
         const failed_purge = (await service.send({
             type: RequestType.Purge,
@@ -380,7 +362,6 @@ describe('Service', () => {
         expect(failed_purge.success).toBe(false);
 
         // After that we're going to query to see if key exists ...
-        
 
         const exists_query = (await service.send({
             type: RequestType.Query,
@@ -405,7 +386,6 @@ describe('Service', () => {
         const key = 'in-memory';
 
         // After that we're going to set something in memory
-        
 
         const set = (await service.send({
             type: RequestType.Set,
@@ -418,7 +398,6 @@ describe('Service', () => {
         expect(set.success).toBe(true);
 
         // After that we're going to get that key ...
-        
 
         const get = (await service.send({
             type: RequestType.Get,
@@ -430,7 +409,6 @@ describe('Service', () => {
         expect(get.value).toBe('EHLO');
 
         // After that we're going to purge the key ...
-        
 
         const success_purge = (await service.send({
             type: RequestType.Purge,
@@ -444,7 +422,6 @@ describe('Service', () => {
         expect(success_purge.success).toBe(true);
 
         // After that we're going to check if key has been purged ...
-        
 
         const check = (await service.send({
             type: RequestType.Get,
@@ -460,8 +437,6 @@ describe('Service', () => {
     it('should insert and query multiple keys in a single batch write', async () => {
         const service = await prepareService();
         const isBigInt = process.env.THROTTR_SIZE === 'uint64';
-
-        
 
         const key1 = 'batch-key-1';
         const key2 = 'batch-key-2';
@@ -482,8 +457,6 @@ describe('Service', () => {
                 ttl: flexNumber(isBigInt, 30),
             },
         ])) as StatusResponse[];
-
-        
 
         expect(res1.success).toBe(true);
         expect(res2.success).toBe(true);
@@ -508,8 +481,6 @@ describe('Service', () => {
         expect(query2.quota).toBe(flexNumber(isBigInt, 9));
         expect(query2.ttl_type).toBe(TTLType.Seconds);
         expect(query2.ttl).toBeGreaterThan(flexNumber(isBigInt, 0));
-
-
 
         const list = (await service.send({
             type: RequestType.List,
@@ -581,7 +552,7 @@ describe('Service', () => {
         //
         subscribe.forEach((status: StatusResponse) => {
             expect(status.success).toBe(true);
-        })
+        });
 
         const success_publish = (await service.send({
             type: RequestType.Publish,
@@ -598,7 +569,7 @@ describe('Service', () => {
 
         unsubscribe.forEach((status: StatusResponse) => {
             expect(status.success).toBe(true);
-        })
+        });
 
         const failed_publish = (await service.send({
             type: RequestType.Publish,
@@ -619,25 +590,25 @@ describe('Service', () => {
             id: id,
         })) as ConnectionResponse;
 
-        const failed_connection =  (await service.send({
+        const failed_connection = (await service.send({
             type: RequestType.Connection,
-            id: "daa6f9fd874e410582ba8e3fe5b5674b",
+            id: 'daa6f9fd874e410582ba8e3fe5b5674b',
         })) as ConnectionResponse;
 
-        const channels =  (await service.send({
+        const channels = (await service.send({
             type: RequestType.Channels,
         })) as ChannelsResponse;
 
         expect(channels.success).toBe(true);
 
-        const channel =  (await service.send({
+        const channel = (await service.send({
             type: RequestType.Channel,
-            channel: '*'
+            channel: '*',
         })) as ChannelResponse;
 
         expect(channel.success).toBe(true);
 
-        const whoami =  (await service.send({
+        const whoami = (await service.send({
             type: RequestType.WhoAmI,
         })) as WhoAmIResponse;
 

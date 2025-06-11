@@ -438,7 +438,6 @@ export interface StatRequest {
     key: string;
 }
 
-
 /**
  * Stats request
  */
@@ -486,7 +485,6 @@ export interface UnsubscribeRequest {
     channel: string;
 }
 
-
 /**
  * Publish request
  */
@@ -531,7 +529,6 @@ export interface ConnectionRequest {
      */
     id: string;
 }
-
 
 /**
  * Channels request
@@ -588,7 +585,6 @@ export interface EventRequest {
     value: string;
 }
 
-
 /**
  * Request
  */
@@ -611,7 +607,7 @@ export type Request =
     | ChannelsRequest // Done
     | ChannelRequest // Done
     | WhoAmIRequest //
-    | EventRequest
+    | EventRequest;
 
 /**
  * Query response
@@ -1043,7 +1039,6 @@ export interface InfoResponse {
     version: string;
 }
 
-
 /**
  * Stat response
  */
@@ -1276,7 +1271,6 @@ export interface ConnectionsItem {
     whoami_requests: number;
 }
 
-
 /**
  * Connections response
  */
@@ -1477,7 +1471,6 @@ export interface ChannelConnectionItem {
     write_bytes: number;
 }
 
-
 /**
  * Channel response
  */
@@ -1511,22 +1504,35 @@ export interface WhoAmIResponse {
 /**
  * Response types
  */
-export type ResponseType = 'status' | 'query' | 'get' | 'info' | 'list' | 'connections' | 'connection' | 'channel' | 'channels' | 'stat' | 'stats' | 'whoami';
+export type ResponseType =
+    | 'status'
+    | 'query'
+    | 'get'
+    | 'info'
+    | 'list'
+    | 'connections'
+    | 'connection'
+    | 'channel'
+    | 'channels'
+    | 'stat'
+    | 'stats'
+    | 'whoami';
 
 /**
  * Request
  */
-export type Response = StatusResponse |
-    QueryResponse |
-    GetResponse |
-    StatResponse |
-    ListResponse |
-    InfoResponse |
-    StatsResponse |
-    ConnectionsResponse |
-    ConnectionResponse |
-    ChannelsResponse |
-    ChannelRequest;
+export type Response =
+    | StatusResponse
+    | QueryResponse
+    | GetResponse
+    | StatResponse
+    | ListResponse
+    | InfoResponse
+    | StatsResponse
+    | ConnectionsResponse
+    | ConnectionResponse
+    | ChannelsResponse
+    | ChannelRequest;
 
 /**
  * Queued request

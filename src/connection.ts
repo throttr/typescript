@@ -67,7 +67,7 @@ export class Connection {
     /**
      * Subscriptions
      */
-    public subscriptions: Map<string, (data: string) => void> = new Map;
+    public subscriptions: Map<string, (data: string) => void> = new Map();
 
     /**
      * Constructor
@@ -109,7 +109,6 @@ export class Connection {
 
             // We are going to try to connect.
             this.socket.connect(this.config.port, this.config.host, () => {
-
                 // We bind data event to the onData handler.
                 this.socket.on('data', chunk => this.onData(chunk));
                 // We bind error event to the OnError handler.
@@ -133,23 +132,29 @@ export class Connection {
     waitUntilReachConnectedStatus(resolve: any, reject: any) {
         /* c8 ignore start */
         // You have at least X attempts
-        const max_attempts = (this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 3);
+        const max_attempts =
+            this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ??
+            3;
         // Per attempt, you'll be waiting for Y ms.
-        const timeout_per_attempt = this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ?? 1000;
+        const timeout_per_attempt =
+            this.config.connection_configuration?.on_wait_for_writable_socket_timeout_per_attempt ??
+            1000;
         /* c8 ignore stop */
 
         if (this.alive && this.socket.writable) {
-            resolve()
+            resolve();
             /* c8 ignore start */
-        } else if (this.alive &&
+        } else if (
+            this.alive &&
             !this.socket.writable &&
-            this.wait_for_writable_socket_attempts <= max_attempts) {
+            this.wait_for_writable_socket_attempts <= max_attempts
+        ) {
             setTimeout(() => {
                 this.waitUntilReachConnectedStatus(resolve, reject);
             }, timeout_per_attempt);
             this.wait_for_writable_socket_attempts++;
         } else {
-            reject()
+            reject();
         }
         /* c8 ignore stop */
     }
@@ -184,21 +189,21 @@ export class Connection {
 
             // On every buffer (request binary serialized) ...
             buffers.forEach((buffer, index) => {
-
                 // We create an element on the requests queue.
                 this.queue.push({
                     buffer: buffer, // Saving his buffer.
                     expectedType: expectedTypes[index], // The expected type based on request (status, query and get).
-                    resolve: (response: Response) => { // We're going to create a handler to be used on resolve.
+                    resolve: (response: Response) => {
+                        // We're going to create a handler to be used on resolve.
                         // As response was resolved.
                         responses[index] = response; // We're going to push that response in the array
-                        if (responses.length === requests.length) { // If we have the same responses as requests then resolve.
+                        if (responses.length === requests.length) {
+                            // If we have the same responses as requests then resolve.
                             // Finally, if we reach this point, we have all the responses so we can resolve.
                             resolve(
                                 // If the request was a batch then return the response batch.
                                 // If the request was only one then return the response.
-                                Array.isArray(request) ?
-                                    responses : responses[0]
+                                Array.isArray(request) ? responses : responses[0]
                             );
                         }
                     },
@@ -247,7 +252,7 @@ export class Connection {
      * @private
      */
     private onData(chunk: Buffer) {
-        this.processPendingResponses(chunk)
+        this.processPendingResponses(chunk);
     }
 
     /**
@@ -278,8 +283,7 @@ export class Connection {
 
     public parseEvent(buffer: Buffer) {
         /* c8 ignore start */
-        if (buffer.length < ValueSize.UInt8 + this.config.value_size)
-            return buffer;
+        if (buffer.length < ValueSize.UInt8 + this.config.value_size) return buffer;
         /* c8 ignore stop */
 
         const channel_size = Number(read(buffer, 1, ValueSize.UInt8));
@@ -396,8 +400,6 @@ export class Connection {
         firstByte: number,
         offset: number
     ): { offset: number } | false {
-
-
         // If the response was STATUS
         if (type === 'status') {
             // We take the byte on the offset
@@ -437,19 +439,22 @@ export class Connection {
             if (buffer.length < scoped_offset) return false;
 
             const fragments = Number(read(buffer, offset + 1, ValueSize.UInt64));
-            const per_key_length = type === 'list' ? (11 + this.config.value_size) : (type == 'stats' ? 33 : 25);
+            const per_key_length =
+                type === 'list' ? 11 + this.config.value_size : type == 'stats' ? 33 : 25;
 
             for (let e = 0; e < fragments; e++) {
                 if (buffer.length < scoped_offset + 8) return false;
                 const current_fragment = Number(read(buffer, scoped_offset, ValueSize.UInt64));
-                scoped_offset+=8;
+                scoped_offset += 8;
                 if (buffer.length < scoped_offset + 8) return false;
 
-                const current_number_of_keys = Number(read(buffer, scoped_offset, ValueSize.UInt64));
-                scoped_offset+=8;
+                const current_number_of_keys = Number(
+                    read(buffer, scoped_offset, ValueSize.UInt64)
+                );
+                scoped_offset += 8;
 
-                if (buffer.length < scoped_offset + (current_number_of_keys * per_key_length)) return false;
-
+                if (buffer.length < scoped_offset + current_number_of_keys * per_key_length)
+                    return false;
 
                 let total_bytes_on_channels = 0;
                 for (let i = 0; i < current_number_of_keys; i++) {
@@ -478,14 +483,20 @@ export class Connection {
             for (let e = 0; e < fragments; e++) {
                 if (buffer.length < scoped_offset + 8) return false;
                 const current_fragment = Number(read(buffer, scoped_offset, ValueSize.UInt64));
-                scoped_offset+=8;
+                scoped_offset += 8;
                 if (buffer.length < scoped_offset + 8) return false;
 
-                const current_number_of_connections = Number(read(buffer, scoped_offset, ValueSize.UInt64));
-                scoped_offset+=8;
+                const current_number_of_connections = Number(
+                    read(buffer, scoped_offset, ValueSize.UInt64)
+                );
+                scoped_offset += 8;
 
-                if (buffer.length < scoped_offset + (current_number_of_connections * per_key_connection_size)) return false;
-                scoped_offset+= (current_number_of_connections * per_key_connection_size);
+                if (
+                    buffer.length <
+                    scoped_offset + current_number_of_connections * per_key_connection_size
+                )
+                    return false;
+                scoped_offset += current_number_of_connections * per_key_connection_size;
             }
 
             const slice = buffer.subarray(offset, offset + scoped_offset);
@@ -536,10 +547,10 @@ export class Connection {
             if (buffer.length < 9) return false;
             const connections = Number(read(buffer, offset + 1, ValueSize.UInt64));
 
-            if (buffer.length < 9 + (connections*40)) return false;
+            if (buffer.length < 9 + connections * 40) return false;
 
-            const slice = buffer.subarray(offset, offset + 1 + 8 +(connections*40));
-            return this.tryParse(slice, type, current, offset + 1 + 8 +(connections*40));
+            const slice = buffer.subarray(offset, offset + 1 + 8 + connections * 40);
+            return this.tryParse(slice, type, current, offset + 1 + 8 + connections * 40);
         }
 
         // If the response is GET
@@ -572,18 +583,10 @@ export class Connection {
             /* c8 ignore stop */
 
             // Otherwise the take the buffer complete
-            const slice = buffer.subarray(
-                offset,
-                offset + expectedLength + Number(valueSize)
-            );
+            const slice = buffer.subarray(offset, offset + expectedLength + Number(valueSize));
 
             // And parse
-            return this.tryParse(
-                slice,
-                type,
-                current,
-                offset + expectedLength + Number(valueSize)
-            );
+            return this.tryParse(slice, type, current, offset + expectedLength + Number(valueSize));
             /* c8 ignore start */
         }
 
@@ -628,7 +631,8 @@ export class Connection {
      * @param error
      * @private
      */
-    private onError(error: Error) { // This function require external conditions to be tested
+    private onError(error: Error) {
+        // This function require external conditions to be tested
         /* c8 ignore start */
         this.flushQueue(error);
     }
@@ -637,12 +641,12 @@ export class Connection {
     /**
      * Disconnect
      */
-    async disconnect() : Promise<void> {
-        return new Promise((resolve) => {
+    async disconnect(): Promise<void> {
+        return new Promise(resolve => {
             this.socket.removeAllListeners();
             this.socket.end(() => {
                 this.flushQueue(new Error('Socket has been manually closed'));
-                resolve()
+                resolve();
             });
         });
     }

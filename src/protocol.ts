@@ -15,7 +15,8 @@
 
 import {
     ChannelConnectionItem,
-    ChannelItem, ChannelResponse,
+    ChannelItem,
+    ChannelResponse,
     ChannelsResponse,
     ConnectionResponse,
     ConnectionsItem,
@@ -132,8 +133,8 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // channel_size
-                channelBuffer.length
+                    1 + // channel_size
+                    channelBuffer.length
             );
 
             let offset = 0;
@@ -153,7 +154,7 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                16 // ID
+                    16 // ID
             );
 
             let offset = 0;
@@ -171,10 +172,10 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
 
             const buffer = Buffer.allocUnsafe(
                 1 + // request_type
-                1 + // channel_size
-                value_size.valueOf() + // value_size
-                channelBuffer.length +
-                valueBuffer.length
+                    1 + // channel_size
+                    value_size.valueOf() + // value_size
+                    channelBuffer.length +
+                    valueBuffer.length
             );
 
             let offset = 0;
@@ -279,17 +280,17 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const keys = [] as ListItem[];
         for (let e = 0; e < fragments_count; e++) {
             const current_fragment = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             const current_number_of_keys = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             let total_bytes_on_channels = 0;
             let scoped_keys = [];
             for (let i = 0; i < current_number_of_keys; i++) {
                 const key_length = Number(read(buffer, offset, ValueSize.UInt8));
-                const key_type = Number(read(buffer, offset +1, ValueSize.UInt8));
-                const ttl_type = Number(read(buffer, offset +2, ValueSize.UInt8));
-                const time_point = Number(read(buffer, offset +3, ValueSize.UInt64));
-                const bytes_used = Number(read(buffer, offset +3 + ValueSize.UInt64, value_size));
+                const key_type = Number(read(buffer, offset + 1, ValueSize.UInt8));
+                const ttl_type = Number(read(buffer, offset + 2, ValueSize.UInt8));
+                const time_point = Number(read(buffer, offset + 3, ValueSize.UInt64));
+                const bytes_used = Number(read(buffer, offset + 3 + ValueSize.UInt64, value_size));
 
                 let index = keys.push({
                     key: '',
@@ -297,29 +298,30 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
                     key_type: key_type === KeyType.Counter ? KeyType.Counter : KeyType.Buffer,
                     ttl_type: ttl_type as TTLType,
                     expires_at: time_point,
-                    bytes_used: bytes_used
+                    bytes_used: bytes_used,
                 } as ListItem);
 
                 scoped_keys.push({
                     index: index,
-                    key_length: key_length
-                })
+                    key_length: key_length,
+                });
 
                 total_bytes_on_channels += Number(key_length);
                 offset += per_key_length;
             }
 
             for (let key of scoped_keys) {
-                keys[key.index - 1].key = buffer.subarray(offset, offset + key.key_length).toString();
+                keys[key.index - 1].key = buffer
+                    .subarray(offset, offset + key.key_length)
+                    .toString();
                 offset += key.key_length;
             }
         }
 
         return {
-          success: success,
-          keys: keys,
+            success: success,
+            keys: keys,
         } as ListResponse;
-
     } else if (expected === 'channels') {
         let success = buffer.at(0) == 0x01;
         let offset = 1;
@@ -330,16 +332,20 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const allowed = /^[a-zA-Z0-9 _.,:;!?@#&()'"-*]*$/;
         for (let e = 0; e < fragments_count; e++) {
             const current_fragment = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             const current_number_of_keys = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             let total_bytes_on_channels = 0;
             let scoped_channels = [];
             for (let i = 0; i < current_number_of_keys; i++) {
                 const channel_length = Number(read(buffer, offset, ValueSize.UInt8));
-                const read_bytes = Number(read(buffer, offset + 1 , ValueSize.UInt64));
-                const write_bytes = Number(read(buffer, offset + 1+ ValueSize.UInt64, ValueSize.UInt64));
-                const connections = Number(read(buffer, offset + 1+ ValueSize.UInt64 + ValueSize.UInt64, ValueSize.UInt64));
+                const read_bytes = Number(read(buffer, offset + 1, ValueSize.UInt64));
+                const write_bytes = Number(
+                    read(buffer, offset + 1 + ValueSize.UInt64, ValueSize.UInt64)
+                );
+                const connections = Number(
+                    read(buffer, offset + 1 + ValueSize.UInt64 + ValueSize.UInt64, ValueSize.UInt64)
+                );
 
                 let index = channels.push({
                     channel: '',
@@ -351,18 +357,19 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
 
                 scoped_channels.push({
                     index: index,
-                    key_length: channel_length
-                })
+                    key_length: channel_length,
+                });
 
                 total_bytes_on_channels += Number(channel_length);
                 offset += per_key_length;
             }
 
-
             for (let channel of scoped_channels) {
                 const scoped_buffer = buffer.subarray(offset, offset + channel.key_length);
                 const channel_name = scoped_buffer.toString();
-                channels[channel.index - 1].channel = allowed.test(channel_name) ? channel_name : scoped_buffer.toString('hex');
+                channels[channel.index - 1].channel = allowed.test(channel_name)
+                    ? channel_name
+                    : scoped_buffer.toString('hex');
                 offset += channel.key_length;
             }
         }
@@ -371,7 +378,6 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
             success: success,
             channels: channels,
         } as ChannelsResponse;
-
     } else if (expected === 'stats') {
         let success = buffer.at(0) == 0x01;
         let offset = 1;
@@ -381,9 +387,9 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const keys = [] as StatsItem[];
         for (let e = 0; e < fragments_count; e++) {
             const current_fragment = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             const current_number_of_keys = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             let total_bytes_on_channels = 0;
             let scoped_keys = [];
             for (let i = 0; i < current_number_of_keys; i++) {
@@ -404,15 +410,17 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
 
                 scoped_keys.push({
                     index: index,
-                    key_length: key_length
-                })
+                    key_length: key_length,
+                });
 
                 total_bytes_on_channels += Number(key_length);
                 offset += per_key_length;
             }
 
             for (let key of scoped_keys) {
-                keys[key.index - 1].key = buffer.subarray(offset, offset + key.key_length).toString();
+                keys[key.index - 1].key = buffer
+                    .subarray(offset, offset + key.key_length)
+                    .toString();
                 offset += key.key_length;
             }
         }
@@ -430,16 +438,19 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         const connections = [] as ConnectionsItem[];
         for (let e = 0; e < fragments_count; e++) {
             const current_fragment = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             const current_number_of_connections = read(buffer, offset, ValueSize.UInt64);
-            offset+=8;
+            offset += 8;
             for (let i = 0; i < current_number_of_connections; i++) {
                 connections.push({
                     id: buffer.subarray(offset, offset + 16).toString('hex'),
                     type: Number(read(buffer, offset + 16, ValueSize.UInt8)),
                     kind: Number(read(buffer, offset + 17, ValueSize.UInt8)),
                     ip_version: Number(read(buffer, offset + 18, ValueSize.UInt8)),
-                    ip: buffer.subarray(offset + 19, offset + 35).toString().replace(/\x00+$/, ''),
+                    ip: buffer
+                        .subarray(offset + 19, offset + 35)
+                        .toString()
+                        .replace(/\x00+$/, ''), // NOSONAR
                     port: Number(read(buffer, offset + 35, ValueSize.UInt16)),
                     connected_at: Number(read(buffer, offset + 37, ValueSize.UInt64)),
                     read_bytes: Number(read(buffer, offset + 45, ValueSize.UInt64)),
@@ -466,7 +477,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
                     channels_requests: Number(read(buffer, offset + 213, ValueSize.UInt64)),
                     channel_requests: Number(read(buffer, offset + 221, ValueSize.UInt64)),
                     whoami_requests: Number(read(buffer, offset + 229, ValueSize.UInt64)),
-                } as ConnectionsItem)
+                } as ConnectionsItem);
 
                 offset += per_connection_length;
             }
@@ -476,21 +487,20 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
             success: success,
             connections: connections,
         } as ConnectionsResponse;
-    }
-    else if (expected === 'channel') {
+    } else if (expected === 'channel') {
         let success = buffer.at(0) == 0x01;
         let offset = 1;
         const per_connection_length = 40;
         const connections = [] as ChannelConnectionItem[];
         const current_number_of_connections = read(buffer, offset, ValueSize.UInt64);
-        offset+=8;
+        offset += 8;
         for (let i = 0; i < current_number_of_connections; i++) {
             connections.push({
                 id: buffer.subarray(offset, offset + 16).toString('hex'),
                 subscribed_at: Number(read(buffer, offset + 16, ValueSize.UInt64)),
                 read_bytes: Number(read(buffer, offset + 24, ValueSize.UInt64)),
                 write_bytes: Number(read(buffer, offset + 32, ValueSize.UInt64)),
-            } as ChannelConnectionItem)
+            } as ChannelConnectionItem);
 
             offset += per_connection_length;
         }
@@ -499,8 +509,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
             success: success,
             connections: connections,
         } as ChannelResponse;
-    }
-    else if (expected === 'connection') {
+    } else if (expected === 'connection') {
         if (buffer.length === 1) {
             return {
                 success: false,
@@ -515,7 +524,10 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
             type: Number(read(buffer, offset + 16, ValueSize.UInt8)),
             kind: Number(read(buffer, offset + 17, ValueSize.UInt8)),
             ip_version: Number(read(buffer, offset + 18, ValueSize.UInt8)),
-            ip: buffer.subarray(offset + 19, offset + 35).toString().replace(/\x00+$/, ''),
+            ip: buffer
+                .subarray(offset + 19, offset + 35)
+                .toString()
+                .replace(/\x00+$/, ''), // NOSONAR
             port: Number(read(buffer, offset + 35, ValueSize.UInt16)),
             connected_at: Number(read(buffer, offset + 37, ValueSize.UInt64)),
             read_bytes: Number(read(buffer, offset + 45, ValueSize.UInt64)),
@@ -598,7 +610,10 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
             total_channels: Number(read(buffer, 392, ValueSize.UInt64)),
             startup_timestamp: Number(read(buffer, 400, ValueSize.UInt64)),
             total_connections: Number(read(buffer, 408, ValueSize.UInt64)),
-            version: buffer.subarray(416, 432).toString().replace(/\x00+$/, ''),
+            version: buffer
+                .subarray(416, 432)
+                .toString()
+                .replace(/\x00+$/, ''), // NOSONAR
         } as InfoResponse;
     } else if (expected === 'stat') {
         if (buffer.length === 1) {
@@ -625,7 +640,7 @@ export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size
         return {
             success: buffer.at(0) === 0x01,
             id: buffer.subarray(1, 16).toString('hex'),
-        }
+        };
     } else if (buffer.length === 1) {
         return {
             success: false,
