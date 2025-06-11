@@ -626,15 +626,13 @@ export class Connection {
      * @param current
      * @param buffer
      * @param offset
-     * @param firstByte
      * @private
      */
     private processConnections(
         type: ResponseType,
         current: QueuedRequest,
         buffer: Buffer,
-        offset: number,
-        firstByte: number
+        offset: number
     ): { offset: number } | false {
         let scoped_offset = offset + 8 + 1;
 
@@ -865,7 +863,7 @@ export class Connection {
             case 'channels':
                 return this.processFragmentedLSCRequests(type, current, buffer, offset);
             case 'connections':
-                return this.processConnections(type, current, buffer, offset, firstByte);
+                return this.processConnections(type, current, buffer, offset);
             case 'connection':
                 return this.processConnection(type, current, buffer, offset, firstByte);
             case 'info':
