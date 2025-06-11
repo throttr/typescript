@@ -95,7 +95,7 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
  * @param value_size
  */
 export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size: ValueSize) {
-    switch (expected) { // 
+    switch (expected) {
         case 'query':
             return HandleQuery(buffer, value_size);
         case 'list':

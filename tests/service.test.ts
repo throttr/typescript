@@ -590,10 +590,14 @@ describe('Service', () => {
             id: id,
         })) as ConnectionResponse;
 
+        expect(connection.success).toBe(true);
+
         const failed_connection = (await service.send({
             type: RequestType.Connection,
             id: 'daa6f9fd874e410582ba8e3fe5b5674b',
         })) as ConnectionResponse;
+
+        expect(failed_connection.success).toBe(false);
 
         const channels = (await service.send({
             type: RequestType.Channels,

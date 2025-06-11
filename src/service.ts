@@ -110,8 +110,7 @@ export class Service {
      * @private
      */
     private async getConnection(): Promise<Connection> {
-        for (let i = 0; i < this.connections.length; i++) {
-            // NOSONAR Note: Round robin explicit
+        for (let i = 0; i < this.connections.length; i++) { // NOSONAR
             const index = this.round_robin_index;
             this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
             const conn = this.connections[index];

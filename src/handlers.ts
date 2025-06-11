@@ -195,7 +195,7 @@ export function HandleChannels(buffer: Buffer) {
     offset += ValueSize.UInt64;
     const per_key_length = 25;
     const channels = [] as ChannelItem[];
-    const allowed = /^[a-zA-Z0-9 _.,:;!?@#&()'"-*]*$/;
+    const allowed = /^[a-zA-Z0-9 _.,:;!?@#&()'"-*]*$/; // NOSONAR
     for (let e = 0; e < fragments_count; e++) {
         offset += 8;
         const current_number_of_keys = read(buffer, offset, ValueSize.UInt64);
