@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Configuration, Request, Response } from './types';
+import { Configuration, Request, RequestType, Response } from './types';
 import { Connection } from './connection';
 
 /**
@@ -49,8 +49,8 @@ export class Service {
         this.config = {
             max_connections: 1,
             connection_configuration: {
-              on_wait_for_writable_socket_attempts: 3,
-              on_wait_for_writable_socket_timeout_per_attempt: 1000,
+                on_wait_for_writable_socket_attempts: 3,
+                on_wait_for_writable_socket_timeout_per_attempt: 1000,
             },
             ...config,
         };
@@ -74,7 +74,7 @@ export class Service {
      *
      * @param request
      */
-    async send(request: Request): Promise<Response>;
+    async send(request: Request): Promise<Response | Response[]>;
     async send(request: Request[]): Promise<Response[]>;
     async send(request: Request | Request[]): Promise<any> {
         /* c8 ignore start */
@@ -83,8 +83,25 @@ export class Service {
         }
         /* c8 ignore stop */
 
-        const connection = await this.getConnection();
-        return connection.send(request);
+        if (
+            !(request instanceof Array) &&
+            (request.type === RequestType.Subscribe || request.type === RequestType.Unsubscribe)
+        ) {
+            const promises = [] as Response[];
+            for (const item of this.connections) {
+                if (request.type == RequestType.Subscribe) {
+                    item.subscriptions.set(request.channel, request.callback);
+                } else {
+                    item.subscriptions.delete(request.channel);
+                }
+                const promise = (await item.send(request)) as Response;
+                promises.push(promise);
+            }
+            return promises;
+        } else {
+            const connection = await this.getConnection();
+            return connection.send(request);
+        }
     }
 
     /**
@@ -93,7 +110,7 @@ export class Service {
      * @private
      */
     private async getConnection(): Promise<Connection> {
-        for (let i = 0; i < this.connections.length; i++) { // NOSONAR Note: Round robin explicit
+        for (let i = 0; i < this.connections.length; i++) { // NOSONAR
             const index = this.round_robin_index;
             this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
             const conn = this.connections[index];
@@ -109,7 +126,7 @@ export class Service {
             if (conn.isAlive()) return conn;
             /* c8 ignore start */
         }
-        throw new Error("No available connections (all dead)");
+        throw new Error('No available connections (all dead)');
         /* c8 ignore stop */
     }
 

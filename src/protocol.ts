@@ -14,16 +14,30 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import {
-    GetResponse,
-    QueryResponse,
-    Request,
-    RequestType,
-    ResponseType,
-    StatusResponse,
-    TTLType,
-    ValueSize,
-} from './types';
-import { read, writeOnRequest, writeByValue } from './utils';
+    HandleChannel,
+    HandleChannels,
+    HandleConnection,
+    HandleConnections,
+    HandleGet,
+    HandleInfo,
+    HandleList,
+    HandleQuery,
+    HandleStat,
+    HandleStats,
+    HandleStatus,
+    HandleWhoAmI,
+} from './handlers';
+import { Request, RequestType, ResponseType, TTLType, ValueSize } from './types';
+import {
+    BuildForConnection,
+    BuildForInsert,
+    BuildForPublishEvent,
+    BuildForQueryGetPurgeStat,
+    BuildForSet,
+    BuildForStatus,
+    BuildForSubscribeUnsubscribeChannel,
+    BuildForUpdate,
+} from './builders';
 
 /**
  * Build request
@@ -33,110 +47,40 @@ import { read, writeOnRequest, writeByValue } from './utils';
  */
 export const BuildRequest = (request: Request, value_size: ValueSize): Buffer => {
     switch (request.type) {
-        case RequestType.Insert: {
-            const keyBuffer = Buffer.from(request.key, 'utf-8');
+        case RequestType.Insert:
+            return BuildForInsert(request, value_size);
 
-            const buffer = Buffer.allocUnsafe(
-                1 + // request_type
-                    value_size.valueOf() + // quota (little endian)
-                    1 + // ttl_type
-                    value_size.valueOf() + // ttl (little endian)
-                    1 + // key_size
-                    keyBuffer.length
-            );
-
-            let offset = 0;
-            buffer.writeUInt8(request.type, offset);
-            offset += 1;
-            writeOnRequest(request, buffer, 'quota', offset, value_size);
-            offset += value_size.valueOf();
-            buffer.writeUInt8(request.ttl_type, offset);
-            offset += 1;
-            writeOnRequest(request, buffer, 'ttl', offset, value_size);
-            offset += value_size.valueOf();
-            buffer.writeUInt8(keyBuffer.length, offset);
-            offset += 1;
-            keyBuffer.copy(buffer, offset);
-            return buffer;
-        }
-
-        case RequestType.Set: {
-            const keyBuffer = Buffer.from(request.key, 'utf-8');
-            const valueBuffer = Buffer.from(request.value, 'utf-8');
-
-            const buffer = Buffer.allocUnsafe(
-                1 + // request_type
-                    1 + // ttl_type
-                    value_size.valueOf() + // ttl (little endian)
-                    1 + // key_size
-                    value_size.valueOf() + // value_size
-                    keyBuffer.length +
-                    valueBuffer.length
-            );
-
-            let offset = 0;
-            buffer.writeUInt8(request.type, offset);
-            offset += 1;
-            buffer.writeUInt8(request.ttl_type, offset);
-            offset += 1;
-            writeOnRequest(request, buffer, 'ttl', offset, value_size);
-            offset += value_size.valueOf();
-            buffer.writeUInt8(keyBuffer.length, offset);
-            offset += 1;
-            writeByValue(buffer, valueBuffer.length, offset, value_size);
-            offset += value_size.valueOf();
-            keyBuffer.copy(buffer, offset);
-            offset += keyBuffer.length;
-            valueBuffer.copy(buffer, offset);
-            return buffer;
-        }
+        case RequestType.Set:
+            return BuildForSet(request, value_size);
 
         case RequestType.Query:
         case RequestType.Get:
-        case RequestType.Purge: {
-            const keyBuffer = Buffer.from(request.key, 'utf-8');
+        case RequestType.Purge:
+        case RequestType.Stat:
+            return BuildForQueryGetPurgeStat(request);
 
-            const buffer = Buffer.allocUnsafe(
-                1 + // request_type
-                    1 + // key_size
-                    keyBuffer.length
-            );
+        case RequestType.Subscribe:
+        case RequestType.Unsubscribe:
+        case RequestType.Channel:
+            return BuildForSubscribeUnsubscribeChannel(request);
 
-            let offset = 0;
-            buffer.writeUInt8(request.type, offset);
-            offset += 1;
-            buffer.writeUInt8(keyBuffer.length, offset);
-            offset += 1;
-            keyBuffer.copy(buffer, offset);
-            return buffer;
-        }
+        case RequestType.Connection:
+            return BuildForConnection(request);
 
-        case RequestType.Update: {
-            const keyBuffer = Buffer.from(request.key, 'utf-8');
+        case RequestType.Publish:
+        case RequestType.Event:
+            return BuildForPublishEvent(request, value_size);
 
-            const buffer = Buffer.allocUnsafe(
-                1 + // request_type
-                    1 + // attribute
-                    1 + // change
-                    value_size.valueOf() + // value (little endian)
-                    1 + // key_size
-                    keyBuffer.length
-            );
+        case RequestType.Update:
+            return BuildForUpdate(request, value_size);
 
-            let offset = 0;
-            buffer.writeUInt8(request.type, offset);
-            offset += 1;
-            buffer.writeUInt8(request.attribute, offset);
-            offset += 1;
-            buffer.writeUInt8(request.change, offset);
-            offset += 1;
-            writeOnRequest(request, buffer, 'value', offset, value_size);
-            offset += value_size.valueOf();
-            buffer.writeUInt8(keyBuffer.length, offset);
-            offset += 1;
-            keyBuffer.copy(buffer, offset);
-            return buffer;
-        }
+        case RequestType.List:
+        case RequestType.Info:
+        case RequestType.Stats:
+        case RequestType.Connections:
+        case RequestType.Channels:
+        case RequestType.WhoAmI:
+            return BuildForStatus(request);
 
         default:
             throw new Error('Unsupported request type');
@@ -151,63 +95,40 @@ export const BuildRequest = (request: Request, value_size: ValueSize): Buffer =>
  * @param value_size
  */
 export function ParseResponse(buffer: Buffer, expected: ResponseType, value_size: ValueSize) {
-    if (expected === 'query') {
-        if (buffer.length === 1) {
+    switch (expected) {
+        case 'query':
+            return HandleQuery(buffer, value_size);
+        case 'list':
+            return HandleList(buffer, value_size);
+        case 'channels':
+            return HandleChannels(buffer);
+        case 'channel':
+            return HandleChannel(buffer);
+        case 'stats':
+            return HandleStats(buffer);
+        case 'connections':
+            return HandleConnections(buffer);
+        case 'connection':
+            return HandleConnection(buffer);
+        case 'info':
+            return HandleInfo(buffer);
+        case 'stat':
+            return HandleStat(buffer);
+        case 'status':
+            return HandleStatus(buffer);
+        case 'whoami':
+            return HandleWhoAmI(buffer);
+        case 'get':
+            return HandleGet(buffer, value_size);
+        /* c8 ignore start */
+        default:
             return {
                 success: false,
                 quota: 0,
                 ttl_type: TTLType.Nanoseconds,
                 ttl: 0,
             };
-        }
-
-        let offset = 0;
-        const success = buffer.readUInt8(offset) === 1;
-        offset += 1;
-        const quota = read(buffer, offset, value_size);
-        offset += value_size.valueOf();
-        const ttl_type = buffer.readUInt8(offset);
-        offset += 1;
-        const ttl = read(buffer, offset, value_size);
-
-        return {
-            success: success,
-            quota: quota,
-            ttl_type: ttl_type,
-            ttl: ttl,
-        } as QueryResponse;
-    } else if (expected === 'status') {
-        if (buffer.length !== 1) {
-            throw new Error(`Invalid status response length: ${buffer.length}`);
-        }
-        return {
-            success: buffer.readUInt8(0) === 1,
-        } as StatusResponse;
-    } else if (buffer.length === 1) {
-        return {
-            success: false,
-            quota: 0,
-            ttl_type: TTLType.Nanoseconds,
-            ttl: 0,
-        };
-    } else {
-        let offset = 0;
-        const success = buffer.readUInt8(offset) === 1;
-        offset += 1;
-        const ttl_type = buffer.readUInt8(offset);
-        offset += 1;
-        const ttl = read(buffer, offset, value_size);
-        offset += value_size.valueOf();
-        read(buffer, offset, value_size);
-        offset += value_size.valueOf();
-        const value = buffer.toString('utf-8', offset);
-
-        return {
-            success: success,
-            ttl_type: ttl_type,
-            ttl: ttl,
-            value: value,
-        } as GetResponse;
+        /* c8 ignore stop */
     }
 }
 
@@ -222,11 +143,32 @@ export function GetExpectedResponseType(request: Request): ResponseType {
         case RequestType.Purge:
         case RequestType.Insert:
         case RequestType.Set:
+        case RequestType.Subscribe:
+        case RequestType.Unsubscribe:
+        case RequestType.Publish:
             return 'status';
         case RequestType.Query:
-            return 'query';
+            return 'query'; //
         case RequestType.Get:
             return 'get';
+        case RequestType.List:
+            return 'list'; //
+        case RequestType.Info:
+            return 'info';
+        case RequestType.Stat:
+            return 'stat';
+        case RequestType.Stats:
+            return 'stats';
+        case RequestType.Connections:
+            return 'connections';
+        case RequestType.Connection:
+            return 'connection';
+        case RequestType.Channels:
+            return 'channels';
+        case RequestType.Channel:
+            return 'channel';
+        case RequestType.WhoAmI:
+            return 'whoami';
         /* c8 ignore start */
         default:
             throw new Error('Unknown request type');
