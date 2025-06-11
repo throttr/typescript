@@ -14,9 +14,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { Socket } from 'net';
-import { Request, Response, ResponseType, QueuedRequest, Configuration, ValueSize } from './types';
+import { Request, Response, ResponseType, QueuedRequest, Configuration, ValueSize, RoundStatus } from './types';
 import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
 import { read } from './utils';
+import { isNumberObject } from 'node:util/types';
 
 /**
  * Connection
@@ -310,6 +311,113 @@ export class Connection {
     }
 
     /**
+     * On empty queue round
+     *
+     * @param iterationBuffer
+     * @param offset
+     * @private
+     */
+    private onEmptyQueueRound(iterationBuffer: Buffer, offset: number) : RoundStatus {
+        // We have nothing on the queue but we have bytes
+        const firstByte = iterationBuffer.readUInt8(offset);
+
+        // If this is an event then react
+        // Otherwise break the while statement
+        if (firstByte == 0x19) {
+            iterationBuffer = this.parseEvent(iterationBuffer);
+            /* c8 ignore start */
+            return {
+                should_continue: true,
+                offset: offset,
+                buffer: iterationBuffer,
+            }
+        } else {
+            return {
+                should_continue: false,
+                offset: offset,
+                buffer: iterationBuffer,
+            }
+        }
+        /* c8 ignore stop */
+    }
+
+    /**
+     * Do round
+     *
+     * @param iterationBuffer
+     * @param offset
+     * @private
+     */
+    private doRound(iterationBuffer: Buffer, offset: number) : RoundStatus {
+        if (this.queue.length > 0) {
+            // We take the first request on the queue
+            const current = this.queue[0];
+
+            // We take his expected type
+            const type = current.expectedType;
+
+            // We verify if we are passed of the range again (sequenced while iterations)
+            /* c8 ignore start */
+            if (offset >= iterationBuffer.length) {
+                return {
+                    should_continue: false,
+                    offset: offset,
+                    buffer: iterationBuffer,
+                };
+            }
+            /* c8 ignore stop */
+
+            // We take the first byte
+            const firstByte = iterationBuffer.readUInt8(offset);
+
+            /* c8 ignore start */
+            if (firstByte == 0x19) {
+                iterationBuffer = this.parseEvent(iterationBuffer);
+                return {
+                    should_continue: true,
+                    offset: offset,
+                    buffer: iterationBuffer,
+                };
+            }
+            /* c8 ignore stop */
+
+            // We try process and we pass
+            const processed = this.tryHandleResponse(
+                type, // To know if we expect STATUS, QUERY or GET response.
+                current, // To eventually resolve the request
+                iterationBuffer, // To decode
+                firstByte, // To know if was success or failed
+                offset // The offset to be used as current index of the buffer
+            );
+
+            // If nothing was obtained we break the while
+            /* c8 ignore start */
+            if (!processed) {
+                return {
+                    should_continue: false,
+                    offset: offset,
+                    buffer: iterationBuffer,
+                }
+            }
+            /* c8 ignore stop */
+
+            // If something was obtained then we have a new offset
+            offset = processed.offset;
+
+            // We remove the element from the queue
+            this.queue.shift();
+
+            return {
+                should_continue: true,
+                offset: offset,
+                buffer: iterationBuffer,
+            };
+        } else {
+            return this.onEmptyQueueRound(iterationBuffer, offset);
+        }
+    }
+
+    /**
      * Process pending responses
      *
      * @private
@@ -325,61 +433,13 @@ export class Connection {
         // While something exists on the queue
         // And the offset is in the iteration buffer range then...
         while (offset < iterationBuffer.length) {
-            if (this.queue.length > 0) {
-                // We take the first request on the queue
-                const current = this.queue[0];
-
-                // We take his expected type
-                const type = current.expectedType;
-
-                // We verify if we are passed of the range again (sequenced while iterations)
-                /* c8 ignore start */
-                if (offset >= iterationBuffer.length) break;
-                /* c8 ignore stop */
-
-                // We take the first byte
-                const firstByte = iterationBuffer.readUInt8(offset);
-
-                /* c8 ignore start */
-                if (firstByte == 0x19) {
-                    iterationBuffer = this.parseEvent(iterationBuffer);
-                    continue;
-                }
-                /* c8 ignore stop */
-
-                // We try process and we pass
-                const processed = this.tryHandleResponse(
-                    type, // To know if we expect STATUS, QUERY or GET response.
-                    current, // To eventually resolve the request
-                    iterationBuffer, // To decode
-                    firstByte, // To know if was success or failed
-                    offset // The offset to be used as current index of the buffer
-                );
-
-                // If nothing was obtained we break the while
-                /* c8 ignore start */
-                if (!processed) break;
-                /* c8 ignore stop */
-
-                // If something was obtained then we have a new offset
-                offset = processed.offset;
-
-                // We remove the element from the queue
-                this.queue.shift();
-            } else {
-                // We have nothing on the queue but we have bytes
-                const firstByte = iterationBuffer.readUInt8(offset);
-
-                // If this is an event then react
-                // Otherwise break the while statement
-                if (firstByte == 0x19) {
-                    iterationBuffer = this.parseEvent(iterationBuffer);
-                    /* c8 ignore start */
-                } else {
-                    break;
-                }
-                /* c8 ignore stop */
+            const iteration = this.doRound(iterationBuffer, offset);
+            iterationBuffer = iteration.buffer;
+            offset = iteration.offset;
+            if (iteration.should_continue) {
+                continue;
             }
+            break;
         }
 
         // If the chunk contain not completed responses
@@ -445,8 +505,12 @@ export class Connection {
             /* c8 ignore stop */
 
             const fragments = Number(read(buffer, offset + 1, ValueSize.UInt64));
-            const per_key_length =
-                type === 'list' ? 11 + this.config.value_size : type == 'stats' ? 33 : 25;
+
+            /* c8 ignore start */
+            const ternary_length = type == 'stats' ? 33 : 25;
+            const list_length = 11 + this.config.value_size;
+            const per_key_length = type === 'list' ? list_length : ternary_length;
+            /* c8 ignore stop */
 
             for (let e = 0; e < fragments; e++) {
                 /* c8 ignore start */

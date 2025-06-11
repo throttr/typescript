@@ -764,6 +764,12 @@ export interface ChannelsResponse {
     channels: Array<ChannelItem>;
 }
 
+export interface RoundStatus {
+    should_continue: boolean;
+    offset: number;
+    buffer: Buffer;
+}
+
 /**
  * Info response
  */
