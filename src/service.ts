@@ -25,20 +25,20 @@ export class Service {
      *
      * @private
      */
-    private readonly config: Configuration;
+    public readonly config: Configuration;
 
     /**
      * Connections
      *
      * @private
      */
-    private readonly connections: Connection[] = [];
+    public readonly connections: Connection[] = [];
 
     /**
      * Round-robin index
      * @private
      */
-    private round_robin_index: number = 0;
+    public round_robin_index: number = 0;
 
     /**
      * Constructor

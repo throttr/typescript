@@ -30,6 +30,7 @@ import {
     ChannelsResponse,
     ConnectionResponse,
     ConnectionsResponse,
+    InfoResponse,
     KeyType,
     ListResponse,
     StatResponse,
@@ -502,7 +503,7 @@ describe('Service', () => {
 
         const info = (await service.send({
             type: RequestType.Info,
-        })) as ListResponse;
+        })) as InfoResponse;
 
         expect(info.success).toBe(true);
 
