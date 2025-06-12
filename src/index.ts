@@ -14,5 +14,5 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 export { Service } from './service';
-export { RequestType, TTLType, AttributeType, ChangeType, ValueSize } from './types';
-export type { Request, QueryResponse, GetResponse, StatusResponse } from './types';
+export { Connection } from './connection';
+export * from './types';

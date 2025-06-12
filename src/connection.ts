@@ -35,42 +35,42 @@ export class Connection {
      *
      * @private
      */
-    private readonly socket: Socket;
+    public readonly socket: Socket;
 
     /**
      * Queue
      *
      * @private
      */
-    private readonly queue: QueuedRequest[] = [];
+    public readonly queue: QueuedRequest[] = [];
 
     /**
      * Buffer
      *
      * @private
      */
-    private buffer: Buffer = Buffer.alloc(0);
+    public buffer: Buffer = Buffer.alloc(0);
 
     /**
      * Alive
      *
      * @private
      */
-    private alive: boolean = false;
+    public alive: boolean = false;
 
     /**
      * Wait for writable socket attempts
      *
      * @private
      */
-    private wait_for_writable_socket_attempts: number = 0;
+    public wait_for_writable_socket_attempts: number = 0;
 
     /**
      * Configuration
      *
      * @private
      */
-    private readonly config: Configuration;
+    public readonly config: Configuration;
 
     /**
      * Subscriptions

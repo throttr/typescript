@@ -1,9 +1,9 @@
 {
     "name": "@throttr/sdk",
-    "version": "5.0.0",
+    "version": "5.1.0",
     "description": "Throttr SDK for Node.js",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "dist/src/index.js",
+    "types": "dist/src/index.d.ts",
     "scripts": {
         "build": "tsc",
         "clean": "rm -rf dist",
