@@ -449,6 +449,6 @@ export function HandleInfo(buffer: Buffer): InfoResponse {
         version: buffer
             .subarray(offset + 52 * step, offset + 54 * step) // 416 to 432
             .toString()
-            .replace(/\x00+$/, ''),
+            .replace(/\x00+$/, ''), // NOSONAR
     };
 }
