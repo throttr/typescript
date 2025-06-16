@@ -613,6 +613,13 @@ describe('Service', () => {
 
         expect(channel.success).toBe(true);
 
+        const failed_channel = (await service.send({
+            type: RequestType.Channel,
+            channel: 'doesnt_exists',
+        })) as ChannelResponse;
+
+        expect(failed_channel.success).toBe(false);
+
         const whoami = (await service.send({
             type: RequestType.WhoAmI,
         })) as WhoAmIResponse;
