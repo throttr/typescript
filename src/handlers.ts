@@ -319,6 +319,11 @@ export function HandleConnections(buffer: Buffer) {
 }
 
 export function HandleChannel(buffer: Buffer) {
+    if (buffer.length === 1) {
+        return {
+            success: false,
+        } as ChannelResponse;
+    }
     let success = buffer.at(0) == 0x01;
     let offset = 1;
     const per_connection_length = 40;
