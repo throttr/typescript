@@ -366,10 +366,10 @@ export function HandleStat(buffer: Buffer) {
 
     return {
         success: true,
-        reads_per_minute: Number(read(buffer, 0, ValueSize.UInt64)),
-        writes_per_minute: Number(read(buffer, 8, ValueSize.UInt64)),
-        total_reads: Number(read(buffer, 16, ValueSize.UInt64)),
-        total_writes: Number(read(buffer, 24, ValueSize.UInt64)),
+        reads_per_minute: Number(read(buffer, 1, ValueSize.UInt64)),
+        writes_per_minute: Number(read(buffer, 9, ValueSize.UInt64)),
+        total_reads: Number(read(buffer, 17, ValueSize.UInt64)),
+        total_writes: Number(read(buffer, 25, ValueSize.UInt64)),
     } as StatResponse;
 }
 
