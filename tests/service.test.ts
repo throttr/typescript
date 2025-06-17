@@ -543,17 +543,17 @@ describe('Service', () => {
         expect(stats.keys[0].total_writes).toBeGreaterThanOrEqual(0);
         expect(stats.keys[1].total_writes).toBeGreaterThanOrEqual(0);
 
-        const subscribe = (await service.send({
+        const connection_item = await service.getConnection();
+
+        const subscribe = (await connection_item.send({
             type: RequestType.Subscribe,
             channel: 'my-channel',
             callback: (data: string) => {
                 expect(data).toBe('EHLO');
             },
-        })) as StatusResponse[];
+        })) as StatusResponse;
         //
-        subscribe.forEach((status: StatusResponse) => {
-            expect(status.success).toBe(true);
-        });
+        expect(subscribe.success).toBe(true);
 
         const success_publish = (await service.send({
             type: RequestType.Publish,
@@ -563,14 +563,12 @@ describe('Service', () => {
 
         expect(success_publish.success).toBe(true);
 
-        const unsubscribe = (await service.send({
+        const unsubscribe = (await connection_item.send({
             type: RequestType.Unsubscribe,
             channel: 'my-channel',
-        })) as StatusResponse[];
+        })) as StatusResponse;
 
-        unsubscribe.forEach((status: StatusResponse) => {
-            expect(status.success).toBe(true);
-        });
+        expect(unsubscribe.success).toBe(true);
 
         const failed_publish = (await service.send({
             type: RequestType.Publish,

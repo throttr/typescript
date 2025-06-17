@@ -83,25 +83,8 @@ export class Service {
         }
         /* c8 ignore stop */
 
-        if (
-            !(request instanceof Array) &&
-            (request.type === RequestType.Subscribe || request.type === RequestType.Unsubscribe)
-        ) {
-            const promises = [] as Response[];
-            for (const item of this.connections) {
-                if (request.type == RequestType.Subscribe) {
-                    item.subscriptions.set(request.channel, request.callback);
-                } else {
-                    item.subscriptions.delete(request.channel);
-                }
-                const promise = (await item.send(request)) as Response;
-                promises.push(promise);
-            }
-            return promises;
-        } else {
-            const connection = await this.getConnection();
-            return connection.send(request);
-        }
+        const connection = await this.getConnection();
+        return connection.send(request);
     }
 
     /**
@@ -109,7 +92,7 @@ export class Service {
      *
      * @private
      */
-    private async getConnection(): Promise<Connection> {
+    public async getConnection(): Promise<Connection> {
         for (let i = 0; i < this.connections.length; i++) { // NOSONAR
             const index = this.round_robin_index;
             this.round_robin_index = (this.round_robin_index + 1) % this.connections.length;
