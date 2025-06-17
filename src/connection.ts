@@ -15,15 +15,17 @@
 
 import { Socket } from 'net';
 import {
+    Configuration,
+    QueuedRequest,
     Request,
+    RequestType,
     Response,
     ResponseType,
-    QueuedRequest,
-    Configuration,
-    ValueSize,
     RoundStatus,
+    ValueSize,
+    WhoAmIResponse,
 } from './types';
-import { BuildRequest, ParseResponse, GetExpectedResponseType } from './protocol';
+import { BuildRequest, GetExpectedResponseType, ParseResponse } from './protocol';
 import { read } from './utils';
 
 /**
@@ -78,6 +80,11 @@ export class Connection {
     public subscriptions: Map<string, (data: string) => void> = new Map();
 
     /**
+     * ID
+     */
+    public id: string = '';
+
+    /**
      * Constructor
      *
      * @param config
@@ -116,7 +123,7 @@ export class Connection {
             // Find info about the TCP errors on connection ...
 
             // We are going to try to connect.
-            this.socket.connect(this.config.port, this.config.host, () => {
+            this.socket.connect(this.config.port, this.config.host, async () => {
                 // We bind data event to the onData handler.
                 this.socket.on('data', chunk => this.onData(chunk));
                 // We bind error event to the OnError handler.
@@ -126,7 +133,7 @@ export class Connection {
                 this.alive = true;
 
                 // We are going to wait until we have a writable socket.
-                this.waitUntilReachConnectedStatus(resolve, reject);
+                await this.waitUntilReachConnectedStatus(resolve, reject);
             });
         });
     }
@@ -137,7 +144,7 @@ export class Connection {
      * @param resolve
      * @param reject
      */
-    waitUntilReachConnectedStatus(resolve: any, reject: any) {
+    async waitUntilReachConnectedStatus(resolve: any, reject: any) {
         /* c8 ignore start */
         // You have at least X attempts
         const max_attempts =
@@ -150,6 +157,12 @@ export class Connection {
         /* c8 ignore stop */
 
         if (this.alive && this.socket.writable) {
+            const response = (await this.send({
+                type: RequestType.WhoAmI,
+            })) as WhoAmIResponse;
+
+            this.id = response.id;
+
             resolve();
             /* c8 ignore start */
         } else if (
@@ -178,6 +191,14 @@ export class Connection {
         const buffers = requests.map(req => BuildRequest(req, this.config.value_size));
 
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
+
+        requests.forEach(req => {
+            if (req.type == RequestType.Subscribe) {
+                this.subscriptions.set(req.channel, req.callback);
+            } else if (req.type == RequestType.Unsubscribe) {
+                this.subscriptions.delete(req.channel);
+            }
+        });
 
         return new Promise((resolve, reject) => {
             // We gonna to define an array of responses
