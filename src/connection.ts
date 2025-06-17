@@ -22,7 +22,8 @@ import {
     Response,
     ResponseType,
     RoundStatus,
-    ValueSize, WhoAmIResponse,
+    ValueSize,
+    WhoAmIResponse,
 } from './types';
 import { BuildRequest, GetExpectedResponseType, ParseResponse } from './protocol';
 import { read } from './utils';
@@ -81,7 +82,7 @@ export class Connection {
     /**
      * ID
      */
-    public id: string = "";
+    public id: string = '';
 
     /**
      * Constructor
@@ -156,8 +157,8 @@ export class Connection {
         /* c8 ignore stop */
 
         if (this.alive && this.socket.writable) {
-            const response = await (this.send({
-                type: RequestType.WhoAmI
+            const response = (await this.send({
+                type: RequestType.WhoAmI,
             })) as WhoAmIResponse;
 
             this.id = response.id;
@@ -191,13 +192,13 @@ export class Connection {
 
         const expectedTypes = requests.map(req => GetExpectedResponseType(req));
 
-        requests.forEach((req) => {
+        requests.forEach(req => {
             if (req.type == RequestType.Subscribe) {
                 this.subscriptions.set(req.channel, req.callback);
             } else if (req.type == RequestType.Unsubscribe) {
                 this.subscriptions.delete(req.channel);
             }
-        })
+        });
 
         return new Promise((resolve, reject) => {
             // We gonna to define an array of responses

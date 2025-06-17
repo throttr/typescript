@@ -423,21 +423,37 @@ export function HandleInfo(buffer: Buffer): InfoResponse {
         total_stat_requests: Number(read(buffer, offset + 21 * step, ValueSize.UInt64)),
         total_stat_requests_per_minute: Number(read(buffer, offset + 22 * step, ValueSize.UInt64)),
         total_subscribe_requests: Number(read(buffer, offset + 23 * step, ValueSize.UInt64)),
-        total_subscribe_requests_per_minute: Number(read(buffer, offset + 24 * step, ValueSize.UInt64)),
+        total_subscribe_requests_per_minute: Number(
+            read(buffer, offset + 24 * step, ValueSize.UInt64)
+        ),
         total_unsubscribe_requests: Number(read(buffer, offset + 25 * step, ValueSize.UInt64)),
-        total_unsubscribe_requests_per_minute: Number(read(buffer, offset + 26 * step, ValueSize.UInt64)),
+        total_unsubscribe_requests_per_minute: Number(
+            read(buffer, offset + 26 * step, ValueSize.UInt64)
+        ),
         total_publish_requests: Number(read(buffer, offset + 27 * step, ValueSize.UInt64)),
-        total_publish_requests_per_minute: Number(read(buffer, offset + 28 * step, ValueSize.UInt64)),
+        total_publish_requests_per_minute: Number(
+            read(buffer, offset + 28 * step, ValueSize.UInt64)
+        ),
         total_channel_requests: Number(read(buffer, offset + 29 * step, ValueSize.UInt64)),
-        total_channel_requests_per_minute: Number(read(buffer, offset + 30 * step, ValueSize.UInt64)),
+        total_channel_requests_per_minute: Number(
+            read(buffer, offset + 30 * step, ValueSize.UInt64)
+        ),
         total_channels_requests: Number(read(buffer, offset + 31 * step, ValueSize.UInt64)),
-        total_channels_requests_per_minute: Number(read(buffer, offset + 32 * step, ValueSize.UInt64)),
+        total_channels_requests_per_minute: Number(
+            read(buffer, offset + 32 * step, ValueSize.UInt64)
+        ),
         total_whoami_requests: Number(read(buffer, offset + 33 * step, ValueSize.UInt64)),
-        total_whoami_requests_per_minute: Number(read(buffer, offset + 34 * step, ValueSize.UInt64)),
+        total_whoami_requests_per_minute: Number(
+            read(buffer, offset + 34 * step, ValueSize.UInt64)
+        ),
         total_connection_requests: Number(read(buffer, offset + 35 * step, ValueSize.UInt64)),
-        total_connection_requests_per_minute: Number(read(buffer, offset + 36 * step, ValueSize.UInt64)),
+        total_connection_requests_per_minute: Number(
+            read(buffer, offset + 36 * step, ValueSize.UInt64)
+        ),
         total_connections_requests: Number(read(buffer, offset + 37 * step, ValueSize.UInt64)),
-        total_connections_requests_per_minute: Number(read(buffer, offset + 38 * step, ValueSize.UInt64)),
+        total_connections_requests_per_minute: Number(
+            read(buffer, offset + 38 * step, ValueSize.UInt64)
+        ),
         total_read_bytes: Number(read(buffer, offset + 39 * step, ValueSize.UInt64)),
         total_read_bytes_per_minute: Number(read(buffer, offset + 40 * step, ValueSize.UInt64)),
         total_write_bytes: Number(read(buffer, offset + 41 * step, ValueSize.UInt64)),
@@ -445,8 +461,12 @@ export function HandleInfo(buffer: Buffer): InfoResponse {
         total_keys: Number(read(buffer, offset + 43 * step, ValueSize.UInt64)),
         total_counters: Number(read(buffer, offset + 44 * step, ValueSize.UInt64)),
         total_buffers: Number(read(buffer, offset + 45 * step, ValueSize.UInt64)),
-        total_allocated_bytes_on_counters: Number(read(buffer, offset + 46 * step, ValueSize.UInt64)),
-        total_allocated_bytes_on_buffers: Number(read(buffer, offset + 47 * step, ValueSize.UInt64)),
+        total_allocated_bytes_on_counters: Number(
+            read(buffer, offset + 46 * step, ValueSize.UInt64)
+        ),
+        total_allocated_bytes_on_buffers: Number(
+            read(buffer, offset + 47 * step, ValueSize.UInt64)
+        ),
         total_subscriptions: Number(read(buffer, offset + 48 * step, ValueSize.UInt64)),
         total_channels: Number(read(buffer, offset + 49 * step, ValueSize.UInt64)),
         startup_timestamp: Number(read(buffer, offset + 50 * step, ValueSize.UInt64)),
