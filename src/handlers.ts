@@ -390,7 +390,7 @@ export function HandleStatus(buffer: Buffer) {
 export function HandleWhoAmI(buffer: Buffer) {
     return {
         success: buffer.at(0) === 0x01,
-        id: buffer.subarray(1, 16).toString('hex'),
+        id: buffer.subarray(1, 17).toString('hex'),
     };
 }
 

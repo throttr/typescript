@@ -139,6 +139,22 @@ export class Connection {
     }
 
     /**
+     * Set on broadcast callback
+     * @param callback
+     */
+    setOnBroadcastCallback (callback: (data: string) => void) {
+        this.subscriptions.set('*', callback);
+    }
+
+    /**
+     * Set on receive callback
+     * @param callback
+     */
+    setOnReceiveCallback (callback: (data: string) => void) {
+        this.subscriptions.set(this.id, callback);
+    }
+
+    /**
      * Wait until reach connected status
      *
      * @param resolve

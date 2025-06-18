@@ -545,6 +545,14 @@ describe('Service', () => {
 
         const connection_item = await service.getConnection();
 
+        connection_item.setOnBroadcastCallback((data: string) => {
+            expect(data).toBe('BCAST');
+        });
+
+        connection_item.setOnReceiveCallback((data: string) => {
+            expect(data).toBe('RCV');
+        });
+
         const subscribe = (await connection_item.send({
             type: RequestType.Subscribe,
             channel: 'my-channel',
@@ -562,6 +570,22 @@ describe('Service', () => {
         })) as StatusResponse;
 
         expect(success_publish.success).toBe(true);
+
+        const success_broadcast = (await service.send({
+            type: RequestType.Publish,
+            channel: '*',
+            value: 'BCAST',
+        })) as StatusResponse;
+
+        expect(success_broadcast.success).toBe(true);
+
+        const success_receive = (await service.send({
+            type: RequestType.Publish,
+            channel: connection_item.id,
+            value: 'RCV',
+        })) as StatusResponse;
+
+        expect(success_receive.success).toBe(true);
 
         const unsubscribe = (await connection_item.send({
             type: RequestType.Unsubscribe,
