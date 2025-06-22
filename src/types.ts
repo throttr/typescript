@@ -56,6 +56,16 @@ export interface Configuration {
      * Connection configuration
      */
     connection_configuration?: ConnectionConfiguration;
+
+    /**
+     * Is unix
+     */
+    use_uds?: boolean;
+
+    /**
+     * Socket
+     */
+    socket?: string;
 }
 
 /**

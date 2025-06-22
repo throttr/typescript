@@ -123,7 +123,7 @@ export class Connection {
             // Find info about the TCP errors on connection ...
 
             // We are going to try to connect.
-            this.socket.connect(this.config.port, this.config.host, async () => {
+            const on_connect = async () =>  {
                 // We bind data event to the onData handler.
                 this.socket.on('data', chunk => this.onData(chunk));
                 // We bind error event to the OnError handler.
@@ -134,7 +134,15 @@ export class Connection {
 
                 // We are going to wait until we have a writable socket.
                 await this.waitUntilReachConnectedStatus(resolve, reject);
-            });
+            }
+
+            /* c8 ignore start */
+            if (this.config.socket) {
+                this.socket.connect(this.config.socket, on_connect);
+            } else {
+                this.socket.connect(this.config.port, this.config.host, on_connect);
+            }
+            /* c8 ignore stop */
         });
     }
 
